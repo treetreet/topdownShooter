@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -6,7 +7,7 @@ public class PlayerMovement : MonoBehaviour
     private float _moveSpeed = 5f;
     public GameObject BulletPrefab;
     public Transform FirePoint; 
-    private float _bulletSpeed = 1500f;
+    private float _bulletSpeed = 100f;
     private Transform _tr;
     private float _initHp;
     private float _maxHp = 100f;
@@ -17,7 +18,7 @@ public class PlayerMovement : MonoBehaviour
         _initHp = _maxHp;
         _tr = transform;
     }
-    void OnCollisionEnter2D(Collision2D coll)
+    void OnTriggerEnter2D(Collider2D coll)
     {
         if (coll.gameObject.tag == "Bullet")
         {
@@ -27,7 +28,6 @@ public class PlayerMovement : MonoBehaviour
     }
     void Update()
     {
-        Move();
         Aim();
 
         _fireTimer -= Time.deltaTime;
@@ -42,6 +42,11 @@ public class PlayerMovement : MonoBehaviour
         {
             Destroy(gameObject);
         }
+    }
+
+    private void FixedUpdate()
+    {
+        Move();
     }
 
     void Move()
