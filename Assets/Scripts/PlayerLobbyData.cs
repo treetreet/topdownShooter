@@ -2,18 +2,23 @@ using System.Collections;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+
 public class PlayerLobbyData : NetworkBehaviour
 {
+    public enum Team
+    {
+        None,
+        Red,
+        Blue
+    };
+    
     private readonly NetworkVariable<FixedString32Bytes> _playerName = new NetworkVariable<FixedString32Bytes>();
     private NetworkVariable<PlayerLobbyData>[] _playerLobbyDatas;
-
-    public readonly PlayerData PlayerData = new PlayerData();
     
     public override void OnNetworkSpawn()
     {
         LobbyManager.Instance.HostOnlySetUI();
         LobbyManager.Instance.ClientOnlySetUI();
-        LobbyManager.Instance.SetUp();
 
         if (IsOwner)
         {
@@ -22,6 +27,7 @@ public class PlayerLobbyData : NetworkBehaviour
             Debug.Log(playerName + "is join this lobby");
             SetPlayerNameServerRpc(playerName);
             
+            LobbyManager.Instance.SetUp();
             LobbyManager.Instance.UpdatePlayerListUI();
         }
     }
@@ -39,5 +45,16 @@ public class PlayerLobbyData : NetworkBehaviour
     }
 
     public string GetPlayerName() => _playerName.Value.ToString();
+    
+    
+    private readonly NetworkVariable<int> _team = new NetworkVariable<int>();
+    
+    public Team GetTeam() => (Team)_team.Value;
+    
+    [ServerRpc]
+    public void ChangeTeamServerRpc(int teamColor)
+    {
+        _team.Value = teamColor;
+    }
 }
 

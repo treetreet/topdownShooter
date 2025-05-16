@@ -2,7 +2,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class LobbyManager : MonoBehaviour
+public class LobbyManager : NetworkBehaviour
 {
     public static LobbyManager Instance;
 
@@ -14,12 +14,13 @@ public class LobbyManager : MonoBehaviour
     [SerializeField] private Button gameStartButton;
     [SerializeField] private Button teamRedButton;
     [SerializeField] private Button teamBlueButton;
-    
-    private readonly LobbyPlayerDataController _playerDataController = new LobbyPlayerDataController();
+
+    private LobbyPlayerDataController _playerDataController;
 
     private void Awake()
     {
         Instance = this;
+        _playerDataController = GetComponent<LobbyPlayerDataController>();
     }
 
     public void SetUp()
@@ -33,8 +34,8 @@ public class LobbyManager : MonoBehaviour
         if(_playerDataController.OwnPlayerData == null) Debug.LogWarning("No client player found");
         else
         {
-            teamRedButton.onClick.AddListener(() => _playerDataController.ChangePlayerTeam((int)PlayerData.Team.Red));
-            teamBlueButton.onClick.AddListener(() => _playerDataController.ChangePlayerTeam((int)PlayerData.Team.Blue));
+            teamRedButton.onClick.AddListener(() => LobbyManager.Instance._playerDataController.ChangePlayerTeamServerRpc((int)PlayerLobbyData.Team.Red));
+            teamBlueButton.onClick.AddListener(() => LobbyManager.Instance._playerDataController.ChangePlayerTeamServerRpc((int)PlayerLobbyData.Team.Blue));
 
             teamRedButton.onClick.AddListener(() => LobbyManager.Instance._playerDataController.CheckStartConditions(gameStartButton));
             teamBlueButton.onClick.AddListener(() => LobbyManager.Instance._playerDataController.CheckStartConditions(gameStartButton));
@@ -66,5 +67,6 @@ public class LobbyManager : MonoBehaviour
     {
         //Lobby의 player List가 변경될 때마다 실행
         Debug.Log($"UpdatePlayerListUI");
+        
     }
 }
