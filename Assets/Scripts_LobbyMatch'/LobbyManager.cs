@@ -2,7 +2,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class LobbyManager : NetworkBehaviour
+public class LobbyManager : MonoBehaviour
 {
     public static LobbyManager Instance;
 
@@ -16,7 +16,6 @@ public class LobbyManager : NetworkBehaviour
     [SerializeField] private Button teamBlueButton;
 
     private LobbyPlayerDataController _playerDataController;
-
     private void Awake()
     {
         Instance = this;
@@ -34,8 +33,8 @@ public class LobbyManager : NetworkBehaviour
         if(_playerDataController.OwnPlayerData == null) Debug.LogWarning("No client player found");
         else
         {
-            teamRedButton.onClick.AddListener(() => LobbyManager.Instance._playerDataController.ChangePlayerTeamServerRpc((int)PlayerLobbyData.Team.Red));
-            teamBlueButton.onClick.AddListener(() => LobbyManager.Instance._playerDataController.ChangePlayerTeamServerRpc((int)PlayerLobbyData.Team.Blue));
+            teamRedButton.onClick.AddListener(() => LobbyManager.Instance._playerDataController.OwnPlayerData.ChangeTeamServerRpc((int)PlayerLobbyData.Team.Red));
+            teamBlueButton.onClick.AddListener(() => LobbyManager.Instance._playerDataController.OwnPlayerData.ChangeTeamServerRpc((int)PlayerLobbyData.Team.Blue));
 
             teamRedButton.onClick.AddListener(() => LobbyManager.Instance._playerDataController.CheckStartConditions(gameStartButton));
             teamBlueButton.onClick.AddListener(() => LobbyManager.Instance._playerDataController.CheckStartConditions(gameStartButton));

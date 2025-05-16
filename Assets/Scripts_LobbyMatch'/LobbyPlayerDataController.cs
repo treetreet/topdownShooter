@@ -3,7 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class LobbyPlayerDataController
+public class LobbyPlayerDataController : MonoBehaviour
 {
     public PlayerLobbyData OwnPlayerData { get; private set; }
     public PlayerLobbyData[] PlayerLobbyDatas { get; private set; }
