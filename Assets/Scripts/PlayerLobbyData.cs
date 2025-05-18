@@ -23,8 +23,14 @@ public class PlayerLobbyData : NetworkBehaviour
         }
 
         OnPlayerSpawned?.Invoke(this);
+        
 
         PlayerName.OnValueChanged += (prev, curr) => Debug.Log($"Name changed: {curr}");
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        LobbyManager.Instance.UnregisterPlayer(this);
     }
 
     [ServerRpc]

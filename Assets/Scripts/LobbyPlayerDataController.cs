@@ -1,15 +1,18 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using Unity.Netcode;
+using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+//
 public class LobbyPlayerDataController : MonoBehaviour
 {
     [SerializeField] private GameObject playerEntryPrefab;  //PlayerEnterUI pref
     [SerializeField] private Transform contentParent;       //PlayerEnterUI parent
     [SerializeField] private Button startGameButton;
-
+    private GameObject entry;
     private void Start()
     {
         LobbyManager.Instance.OnStartConditionChanged += (canStart) =>
@@ -17,8 +20,10 @@ public class LobbyPlayerDataController : MonoBehaviour
             startGameButton.interactable = canStart;
         };
         LobbyManager.Instance.OnPlayerAdded += AddPlayerUI;
+        LobbyManager.Instance.OnPlayerAdded += StartButtonSet;
 
-        //startGameButton.gameObject.SetActive(NetworkManager.Singleton.IsHost);
+        LobbyManager.Instance.OnPlayerRemoved += RemovedPlayerUI;
+        
         startGameButton.interactable = false;
         
         startGameButton.onClick.AddListener(() =>
@@ -35,16 +40,29 @@ public class LobbyPlayerDataController : MonoBehaviour
         NetworkManager.Singleton.SceneManager.LoadScene("GameScene", LoadSceneMode.Single);
     }
 
+    //Button UI 관련 동기화.
     private void AddPlayerUI(PlayerLobbyData playerData)
     {
-        GameObject entry = Instantiate(playerEntryPrefab, contentParent);
+        entry = Instantiate(playerEntryPrefab, contentParent);
         var ui = entry.GetComponent<PlayerLobbyEntryUI>();
         ui.Bind(playerData);
     }
-    
-    IEnumerator StartAfterHostCheck()
+
+    private void RemovedPlayerUI()
     {
-        yield return new WaitForSeconds(0.5f);
+        Destroy(entry);
+    }
+
+    private void StartButtonSet(PlayerLobbyData playerData)
+    {
         startGameButton.gameObject.SetActive(NetworkManager.Singleton.IsHost);
+    }
+
+    private void OnDestroy()
+    {
+        LobbyManager.Instance.OnPlayerAdded -= AddPlayerUI;
+        LobbyManager.Instance.OnPlayerAdded -= StartButtonSet;
+
+        LobbyManager.Instance.OnPlayerRemoved -= RemovedPlayerUI;
     }
 }

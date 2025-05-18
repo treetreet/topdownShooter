@@ -6,11 +6,13 @@ using System.Linq;
 public class LobbyManager : MonoBehaviour
 {
     public static LobbyManager Instance { get; private set; }
-
-    private readonly Dictionary<ulong, PlayerLobbyData> players = new();
+    public List<PlayerLobbyData> playerDataList = new();
 
     public delegate void PlayerAdded(PlayerLobbyData playerData);
-    public event PlayerAdded OnPlayerAdded;
+    public delegate void PlayerRemoved();
+    public event PlayerAdded OnPlayerAdded;             // 플레이어 로비 입장 후 init
+    public event PlayerRemoved OnPlayerRemoved;
+    public event Action<bool> OnStartConditionChanged;  // 버튼 활성화 상태 변경 알림
 
     private void Awake()
     {
@@ -20,7 +22,6 @@ public class LobbyManager : MonoBehaviour
         PlayerLobbyData.OnPlayerSpawned += RegisterPlayer;
     }
 
-    public List<PlayerLobbyData> playerDataList = new();
 
     public void RegisterPlayer(PlayerLobbyData data)
     {
@@ -35,9 +36,9 @@ public class LobbyManager : MonoBehaviour
     {
         playerDataList.Remove(data);
         CheckStartCondition();
+        OnPlayerRemoved?.Invoke();
     }
 
-    public event Action<bool> OnStartConditionChanged; // 버튼 활성화 상태 변경 알림
 
     public void CheckStartCondition()
     {
@@ -46,7 +47,7 @@ public class LobbyManager : MonoBehaviour
         bool allSelected = playerDataList.All(p => p.TeamId.Value != 0);
         bool canStart = allSelected && redCount >= 1 && blueCount >= 1;
         
-        Debug.Log("[Check Start Condition]" + redCount + " red, " + blueCount + " blue" + allSelected + "all selected");
+        Debug.Log("[Check Start Condition]" + redCount + " red, " + blueCount + " blue, " + allSelected + " all selected, " + playerDataList.Count + " player data Count");
 
         OnStartConditionChanged?.Invoke(canStart);
     }
@@ -54,19 +55,5 @@ public class LobbyManager : MonoBehaviour
     private void OnDestroy()
     {
         PlayerLobbyData.OnPlayerSpawned -= RegisterPlayer;
-    }
-
-    /*private void RegisterPlayer(PlayerLobbyData playerData)
-    {
-        if (!players.ContainsKey(playerData.OwnerClientId))
-        {
-            players.Add(playerData.OwnerClientId, playerData);
-            OnPlayerAdded?.Invoke(playerData);
-        }
-    }*/
-
-    public PlayerLobbyData GetPlayer(ulong clientId)
-    {
-        return players.TryGetValue(clientId, out var player) ? player : null;
     }
 }

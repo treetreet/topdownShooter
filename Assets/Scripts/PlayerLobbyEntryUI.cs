@@ -9,7 +9,6 @@ public class PlayerLobbyEntryUI : MonoBehaviour
     [SerializeField] private Button redTeamButton;
     [SerializeField] private Button blueTeamButton;
     [SerializeField] private TMP_Text teamText;
-    //[SerializeField] private Image readyIndicator;
 
     private PlayerLobbyData boundData;
 
@@ -51,7 +50,7 @@ public class PlayerLobbyEntryUI : MonoBehaviour
 
         teamText.text = GetTeamName(data.TeamId.Value);*/
     }
-
+    
     private string GetTeamName(int teamId)
     {
         return teamId switch
