@@ -1,60 +1,35 @@
-using System.Collections;
-using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using System;
+using Unity.Collections;
 
 public class PlayerLobbyData : NetworkBehaviour
 {
-    public enum Team
+    public static event Action<PlayerLobbyData> OnPlayerSpawned;
+
+    public NetworkVariable<FixedString32Bytes> PlayerName = new NetworkVariable<FixedString32Bytes>();
+    public NetworkVariable<int> TeamId = new NetworkVariable<int>(0); // 0: 선택 안함, 1: Red, 2: Blue
+
+    [ServerRpc]
+    public void SetTeamServerRpc(int team)
     {
-        None,
-        Red,
-        Blue
-    };
-    
-    private readonly NetworkVariable<FixedString32Bytes> _playerName = new NetworkVariable<FixedString32Bytes>();
-    private NetworkVariable<PlayerLobbyData>[] _playerLobbyDatas;
-    
+        TeamId.Value = team;
+    }
     public override void OnNetworkSpawn()
     {
-        LobbyManager.Instance.HostOnlySetUI();
-        LobbyManager.Instance.ClientOnlySetUI();
-
         if (IsOwner)
         {
-            //로컬에서 실행
-            string playerName = "플레이어" + Random.Range(10000, 99999);
-            Debug.Log(playerName + "is join this lobby");
-            SetPlayerNameServerRpc(playerName);
-            
-            LobbyManager.Instance.SetUp();
-            LobbyManager.Instance.UpdatePlayerListUI();
+            SubmitNameServerRpc("Player " + OwnerClientId);
         }
+
+        OnPlayerSpawned?.Invoke(this);
+
+        PlayerName.OnValueChanged += (prev, curr) => Debug.Log($"Name changed: {curr}");
     }
 
-
-    public override void OnNetworkDespawn()
-    {
-        LobbyManager.Instance.UpdatePlayerListUI();
-    }
-    
     [ServerRpc]
-    private void SetPlayerNameServerRpc(string nameValue)
+    private void SubmitNameServerRpc(string name)
     {
-        _playerName.Value = nameValue;
-    }
-
-    public string GetPlayerName() => _playerName.Value.ToString();
-    
-    
-    private readonly NetworkVariable<int> _team = new NetworkVariable<int>();
-    
-    public Team GetTeam() => (Team)_team.Value;
-    
-    [ServerRpc]
-    public void ChangeTeamServerRpc(int teamColor)
-    {
-        _team.Value = teamColor;
+        PlayerName.Value = name;
     }
 }
-

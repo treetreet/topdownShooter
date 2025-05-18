@@ -1,71 +1,72 @@
-using Unity.Netcode;
+using System;
 using UnityEngine;
-using UnityEngine.UI;
+using System.Collections.Generic;
+using System.Linq;
 
 public class LobbyManager : MonoBehaviour
 {
-    public static LobbyManager Instance;
+    public static LobbyManager Instance { get; private set; }
 
-    [SerializeField] private Transform playerListParent;
-    [SerializeField] private GameObject playerListItemPrefab;
-    [SerializeField] private GameObject[] hostOnlyUIList;
-    [SerializeField] private GameObject[] clientOnlyUIList;
-    
-    [SerializeField] private Button gameStartButton;
-    [SerializeField] private Button teamRedButton;
-    [SerializeField] private Button teamBlueButton;
+    private readonly Dictionary<ulong, PlayerLobbyData> players = new();
 
-    private LobbyPlayerDataController _playerDataController;
+    public delegate void PlayerAdded(PlayerLobbyData playerData);
+    public event PlayerAdded OnPlayerAdded;
+
     private void Awake()
     {
-        Instance = this;
-        _playerDataController = GetComponent<LobbyPlayerDataController>();
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+
+        PlayerLobbyData.OnPlayerSpawned += RegisterPlayer;
     }
 
-    public void SetUp()
+    public List<PlayerLobbyData> playerDataList = new();
+
+    public void RegisterPlayer(PlayerLobbyData data)
     {
-        _playerDataController.FindClientPlayer();
-        InitializeUI();
+        if(data == null) Debug.LogWarning("register player data is null");
+        playerDataList.Add(data);
+        data.TeamId.OnValueChanged += (_, _) => CheckStartCondition();
+        CheckStartCondition();
+        OnPlayerAdded?.Invoke(data);
     }
 
-    private void InitializeUI()
+    public void UnregisterPlayer(PlayerLobbyData data)
     {
-        if(_playerDataController.OwnPlayerData == null) Debug.LogWarning("No client player found");
-        else
-        {
-            teamRedButton.onClick.AddListener(() => LobbyManager.Instance._playerDataController.OwnPlayerData.ChangeTeamServerRpc((int)PlayerLobbyData.Team.Red));
-            teamBlueButton.onClick.AddListener(() => LobbyManager.Instance._playerDataController.OwnPlayerData.ChangeTeamServerRpc((int)PlayerLobbyData.Team.Blue));
-
-            teamRedButton.onClick.AddListener(() => LobbyManager.Instance._playerDataController.CheckStartConditions(gameStartButton));
-            teamBlueButton.onClick.AddListener(() => LobbyManager.Instance._playerDataController.CheckStartConditions(gameStartButton));
-        }
+        playerDataList.Remove(data);
+        CheckStartCondition();
     }
 
-    public void HostOnlySetUI()
+    public event Action<bool> OnStartConditionChanged; // 버튼 활성화 상태 변경 알림
+
+    public void CheckStartCondition()
     {
-        if (NetworkManager.Singleton.IsHost)
-        {
-            foreach (var hostOnlyUI in hostOnlyUIList)
-            {
-                hostOnlyUI.SetActive(true);
-                gameStartButton.interactable = false;
-            }
-        }
-    }
-    public void ClientOnlySetUI()
-    {
-        if (!NetworkManager.Singleton.IsHost)
-        {
-            foreach (var clientOnlyUI in clientOnlyUIList)
-            {
-                clientOnlyUI.SetActive(true);
-            }
-        }
-    }
-    public void UpdatePlayerListUI()
-    {
-        //Lobby의 player List가 변경될 때마다 실행
-        Debug.Log($"UpdatePlayerListUI");
+        int redCount = playerDataList.Count(p => p.TeamId.Value == 1);
+        int blueCount = playerDataList.Count(p => p.TeamId.Value == 2);
+        bool allSelected = playerDataList.All(p => p.TeamId.Value != 0);
+        bool canStart = allSelected && redCount >= 1 && blueCount >= 1;
         
+        Debug.Log("[Check Start Condition]" + redCount + " red, " + blueCount + " blue" + allSelected + "all selected");
+
+        OnStartConditionChanged?.Invoke(canStart);
+    }
+    
+    private void OnDestroy()
+    {
+        PlayerLobbyData.OnPlayerSpawned -= RegisterPlayer;
+    }
+
+    /*private void RegisterPlayer(PlayerLobbyData playerData)
+    {
+        if (!players.ContainsKey(playerData.OwnerClientId))
+        {
+            players.Add(playerData.OwnerClientId, playerData);
+            OnPlayerAdded?.Invoke(playerData);
+        }
+    }*/
+
+    public PlayerLobbyData GetPlayer(ulong clientId)
+    {
+        return players.TryGetValue(clientId, out var player) ? player : null;
     }
 }
