@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
@@ -8,9 +7,8 @@ public class PlayerLobbyEntryUI : MonoBehaviour
     [SerializeField] private TMP_Text nameText;
     [SerializeField] private Button redTeamButton;
     [SerializeField] private Button blueTeamButton;
-    [SerializeField] private TMP_Text teamText;
 
-    private PlayerLobbyData boundData;
+    private PlayerLobbyData _boundData;
 
     private void Awake()
     {
@@ -21,43 +19,26 @@ public class PlayerLobbyEntryUI : MonoBehaviour
     //button click event binding
     public void Bind(PlayerLobbyData data)
     {
-        boundData = data;
+        _boundData = data;
         
-        if(boundData == null) Debug.LogWarning("PlayerLobbyEntryUI: boundData is null");
+        if(_boundData == null) Debug.LogWarning("PlayerLobbyEntryUI: boundData is null");
 
         redTeamButton.onClick.AddListener(() =>
         {
-            if (boundData.IsOwner)
+            if (_boundData.IsOwner)
             {
-                boundData.SetTeamServerRpc(1); // Red
+                _boundData.SetTeamServerRpc(1); // Red
                 LobbyManager.Instance.CheckStartCondition();
             }
         });
 
         blueTeamButton.onClick.AddListener(() =>
         {
-            if (boundData.IsOwner)
+            if (_boundData.IsOwner)
             {
-                boundData.SetTeamServerRpc(2); // Blue
+                _boundData.SetTeamServerRpc(2); // Blue
                 LobbyManager.Instance.CheckStartCondition();
             }
         });
-
-        /*data.TeamId.OnValueChanged += (_, newTeam) =>
-        {
-            teamText.text = GetTeamName(newTeam);
-        };
-
-        teamText.text = GetTeamName(data.TeamId.Value);*/
-    }
-    
-    private string GetTeamName(int teamId)
-    {
-        return teamId switch
-        {
-            1 => "Red",
-            2 => "Blue",
-            _ => "No Team"
-        };
     }
 }

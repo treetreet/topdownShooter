@@ -1,18 +1,14 @@
-﻿using System;
-using System.Collections;
-using Unity.Netcode;
-using Unity.Services.Lobbies.Models;
+﻿using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-//
 public class LobbyPlayerDataController : MonoBehaviour
 {
     [SerializeField] private GameObject playerEntryPrefab;  //PlayerEnterUI pref
     [SerializeField] private Transform contentParent;       //PlayerEnterUI parent
     [SerializeField] private Button startGameButton;
-    private GameObject entry;
+    private GameObject _entry;
     private void Start()
     {
         LobbyManager.Instance.OnStartConditionChanged += (canStart) =>
@@ -26,10 +22,7 @@ public class LobbyPlayerDataController : MonoBehaviour
         
         startGameButton.interactable = false;
         
-        startGameButton.onClick.AddListener(() =>
-        {
-            StartGameServerRpc(); // 게임 시작 요청
-        });
+        startGameButton.onClick.AddListener(StartGameServerRpc);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -43,14 +36,14 @@ public class LobbyPlayerDataController : MonoBehaviour
     //Button UI 관련 동기화.
     private void AddPlayerUI(PlayerLobbyData playerData)
     {
-        entry = Instantiate(playerEntryPrefab, contentParent);
-        var ui = entry.GetComponent<PlayerLobbyEntryUI>();
+        _entry = Instantiate(playerEntryPrefab, contentParent);
+        var ui = _entry.GetComponent<PlayerLobbyEntryUI>();
         ui.Bind(playerData);
     }
 
     private void RemovedPlayerUI()
     {
-        Destroy(entry);
+        Destroy(_entry);
     }
 
     private void StartButtonSet(PlayerLobbyData playerData)
