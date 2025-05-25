@@ -1,49 +1,70 @@
+    using System;
+    using System.Collections.Generic;
+    using TreeEditor;
+    using Unity.Netcode;
     using UnityEngine;
 
-    public class CapturePointCtrl : MonoBehaviour
+    public class CapturePointCtrl : NetworkBehaviour
     {
-        // Start is called once before the first execution of Update after the MonoBehaviour is created
-        public int scorePerSecond = 10;
-        private bool RedplayerInside = false;
-        private bool BlueplayerInside = false;
+        enum Team
+        {
+            None = 0,
+            Red = 1,
+            Blue = 2
+        }
+        
+        public int scorePerSecond = 10; 
+        private Dictionary<Team, HashSet<NetworkObject>> _playersInZone = new();
+
         private float score = 0f;
         private float debugTimer = 0f;
 
+        private void Awake()
+        {
+            _playersInZone.Add(Team.Red, new HashSet<NetworkObject>());
+            _playersInZone.Add(Team.Blue, new HashSet<NetworkObject>());
+        }
+
         private void OnTriggerEnter2D(Collider2D other)
         {
-            Debug.Log(other.gameObject.tag);
-            if (other.CompareTag("RedPlayer"))
+            if (!IsServer || !other.CompareTag("Player")) return;
+            
+            Debug.Log(other.gameObject.tag + " - " + other.gameObject.layer);
+            if (other.gameObject.layer == LayerMask.NameToLayer("Red"))
             {
                 Debug.Log("Red 입장");
-        
-                RedplayerInside = true;
+                _playersInZone[Team.Red].Add(other.gameObject.GetComponent<NetworkObject>());
             }
 
-            if (other.CompareTag("BluePlayer"))
+            else if (other.gameObject.layer == LayerMask.NameToLayer("Blue"))
             {
                 Debug.Log("Blue 입장");
-                BlueplayerInside = true;
+                _playersInZone[Team.Blue].Add(other.gameObject.GetComponent<NetworkObject>());
             }
         }
 
         private void OnTriggerExit2D(Collider2D other)
         {
-            if (other.CompareTag("RedPlayer"))
+            if (!IsServer || !other.CompareTag("Player")) return;
+            
+            if (other.gameObject.layer == LayerMask.NameToLayer("Red"))
             {
                 Debug.Log("Red 퇴장");
-                RedplayerInside = false;
+                _playersInZone[Team.Red].Remove(other.gameObject.GetComponent<NetworkObject>());
             }
 
             if (other.CompareTag("BluePlayer"))
             {
                 Debug.Log("Blue 퇴장");
-                BlueplayerInside = false;
+                _playersInZone[Team.Blue].Remove(other.gameObject.GetComponent<NetworkObject>());
             }
         }
 
         private void Update()
         {
-            if (BlueplayerInside && RedplayerInside)
+            if(!IsServer) return;
+            
+            /*if (BlueplayerInside && RedplayerInside)
             {
                    
             }
@@ -55,7 +76,7 @@
             {
                 score += -scorePerSecond * Time.deltaTime;
             }
-            debugTimer += Time.deltaTime;
+            debugTimer += Time.deltaTime;*/
 
             if (debugTimer >= 1f)
             {
