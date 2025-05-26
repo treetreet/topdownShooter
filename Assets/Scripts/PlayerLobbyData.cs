@@ -41,7 +41,7 @@ public class PlayerLobbyData : NetworkBehaviour
         {
             SubmitNameServerRpc("Player " + OwnerClientId);
             _playerMovement = gameObject.GetComponent<PlayerMovement>();
-            _playerMovement.enabled = false;
+            //_playerMovement.enabled = false;
             _playerSpriteRenderer = gameObject.GetComponent<SpriteRenderer>();
         }
 
