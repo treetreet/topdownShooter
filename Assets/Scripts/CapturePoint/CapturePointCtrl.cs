@@ -1,75 +1,159 @@
-    using UnityEngine;
+using System.Collections.Generic;
+using Unity.Netcode;
+using UnityEngine;
 
-    public class CapturePointCtrl : MonoBehaviour
+public class CapturePointCtrl : NetworkBehaviour
+{
+    enum Team
     {
-        // Start is called once before the first execution of Update after the MonoBehaviour is created
-        public int scorePerSecond = 10;
-        private bool RedplayerInside = false;
-        private bool BlueplayerInside = false;
-        private float score = 0f;
-        private float debugTimer = 0f;
+        None = 0,
+        Red = 1,
+        Blue = 2,
+        Contesting = 3
+    }
 
-        private void OnTriggerEnter2D(Collider2D other)
+    public int scorePerSecond = 10;
+    private readonly Dictionary<Team, HashSet<NetworkObject>> _playersInZone = new();
+
+    private Team _inZoneTeam = Team.None;
+    private Team _zoneOwnerTeam = Team.None;
+    
+    [SerializeField] private float _zoneGauge = 0f;
+    
+    [SerializeField] private float _redScore = 0f;
+    [SerializeField] private float _blueScore = 0f;
+    
+    
+    private void Awake()
+    {
+        _playersInZone.Add(Team.Red, new HashSet<NetworkObject>());
+        _playersInZone.Add(Team.Blue, new HashSet<NetworkObject>());
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (!IsServer || !other.CompareTag("Player")) return;
+
+        Debug.Log(other.gameObject.tag + " - " + other.gameObject.layer);
+        if (other.gameObject.layer == LayerMask.NameToLayer("Red"))
         {
-            Debug.Log(other.gameObject.tag);
-            if (other.CompareTag("RedPlayer"))
-            {
-                Debug.Log("Red 입장");
+            Debug.Log("Red 입장");
+            _playersInZone[Team.Red].Add(other.gameObject.GetComponent<NetworkObject>());
+        }
+
+        else if (other.gameObject.layer == LayerMask.NameToLayer("Blue"))
+        {
+            Debug.Log("Blue 입장");
+            _playersInZone[Team.Blue].Add(other.gameObject.GetComponent<NetworkObject>());
+        }
+
+        CheckInZoneTeam();
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        if (!IsServer || !other.CompareTag("Player")) return;
+
+        if (other.gameObject.layer == LayerMask.NameToLayer("Red"))
+        {
+            Debug.Log("Red 퇴장");
+            _playersInZone[Team.Red].Remove(other.gameObject.GetComponent<NetworkObject>());
+        }
+
+        if (other.gameObject.layer == LayerMask.NameToLayer("Blue"))
+        {
+            Debug.Log("Blue 퇴장");
+            _playersInZone[Team.Blue].Remove(other.gameObject.GetComponent<NetworkObject>());
+        }
+
+        CheckInZoneTeam();
+    }
+
+    void CheckInZoneTeam()
+    {
+        bool inRed = _playersInZone[Team.Red].Count > 0;
+        bool inBlue = _playersInZone[Team.Blue].Count > 0;
         
-                RedplayerInside = true;
-            }
-
-            if (other.CompareTag("BluePlayer"))
-            {
-                Debug.Log("Blue 입장");
-                BlueplayerInside = true;
-            }
-        }
-
-        private void OnTriggerExit2D(Collider2D other)
+        if (inRed)
         {
-            if (other.CompareTag("RedPlayer"))
-            {
-                Debug.Log("Red 퇴장");
-                RedplayerInside = false;
-            }
-
-            if (other.CompareTag("BluePlayer"))
-            {
-                Debug.Log("Blue 퇴장");
-                BlueplayerInside = false;
-            }
+            _inZoneTeam = inBlue ? Team.Contesting : Team.Red;
         }
-
-        private void Update()
+        else
         {
-            if (BlueplayerInside && RedplayerInside)
-            {
-                   
-            }
-            else if (BlueplayerInside && !RedplayerInside)
-            {
-                score += scorePerSecond * Time.deltaTime;
-            }
-            else if (RedplayerInside && !BlueplayerInside)
-            {
-                score += -scorePerSecond * Time.deltaTime;
-            }
-            debugTimer += Time.deltaTime;
+            _inZoneTeam = inBlue ? Team.Blue : Team.None;
+        }
+    }
 
-            if (debugTimer >= 1f)
+    void Update()
+    {
+        if (!IsServer) return;
+        
+        if (_inZoneTeam == Team.None)
+        {
+            ScoreUp(_inZoneTeam);
+        }
+        else if (_inZoneTeam == Team.Red || _inZoneTeam == Team.Blue)
+        {
+            if (_inZoneTeam == _zoneOwnerTeam)
             {
-                Debug.Log($"점령 점수: {score:F2}");
-                debugTimer = 0f;
+                ScoreUp(_inZoneTeam);
             }
-            
-            if (score >= 100)
+            else
             {
-                Debug.Log("BlueTeam Win!");
-            }
-            else if (score <= -100)
-            {
-                Debug.Log("RedTeam Win!");
+                ZoneGaugeUp(_inZoneTeam);
             }
         }
     }
+
+    void ScoreUp(Team team)
+    {
+        if (team == Team.Red)
+        {
+            _redScore += scorePerSecond * Time.deltaTime;
+            if (_redScore >= 100)
+            {
+                _redScore = 100;
+                Debug.Log("Red Win!");
+            }
+        }
+        else if (team == Team.Blue)
+        {
+            _blueScore += scorePerSecond * Time.deltaTime;
+            if (_blueScore >= 100)
+            {
+                _blueScore = 100;
+                Debug.Log("Blue Win!");
+            }
+        }
+    }
+
+    void ZoneGaugeUp(Team team)
+    {
+        if (team == Team.Red)
+        {
+            _zoneGauge += scorePerSecond * Time.deltaTime;
+            if (_zoneGauge >= 100)
+            {
+                _zoneGauge = 100;
+                _zoneOwnerTeam = team;
+            }
+            else if (_zoneOwnerTeam == Team.Blue && _zoneGauge >= 0)
+            {
+                _zoneOwnerTeam = Team.None;
+            }
+        }
+        else if (team == Team.Blue)
+        {
+            _zoneGauge -= scorePerSecond * Time.deltaTime;
+            if (_zoneGauge <= -100)
+            {
+                _zoneGauge = -100;
+                _zoneOwnerTeam = team;
+            }
+            else if (_zoneOwnerTeam == Team.Red && _zoneGauge <= 0)
+            {
+                _zoneOwnerTeam = Team.None;
+            }
+        }
+    }
+}
