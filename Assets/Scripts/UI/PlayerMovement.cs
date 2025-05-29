@@ -36,6 +36,8 @@ public class PlayerMovement : MonoBehaviour
         {
             _initHp -= 10;
             Destroy(coll.gameObject);
+            
+            StartCoroutine(Camera.main.GetComponent<PlayerCamera>().Shake(0.1f, 0.1f));
 
             GameObject hitEffect = Instantiate(HitEffectPrefab, transform.position, Quaternion.identity);
             Destroy(hitEffect, 3f);
