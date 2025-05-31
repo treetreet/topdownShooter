@@ -141,7 +141,8 @@ PlayerSettings:
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
   bundleVersion: 1.0
-  preloadedAssets: []
+  preloadedAssets:
+  - {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -862,11 +863,11 @@ PlayerSettings:
   captureStartupLogs: {}
   activeInputHandler: 2
   windowsGamepadBackendHint: 0
-  cloudProjectId: 93043fb1-3656-4220-873e-2efba3666281
+  cloudProjectId: aa246157-1d7c-4401-8ddf-8e4b7007639a
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: topdownShooter 2025-05-08_15-16-37
-  organizationId: treetreet
+  projectName: topdownShooter (1)
+  organizationId: yangsonguk11
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
   hmiLoadingImage: {fileID: 0}
