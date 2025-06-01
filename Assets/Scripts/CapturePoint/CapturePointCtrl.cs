@@ -32,7 +32,7 @@ public class CapturePointCtrl : NetworkBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (!IsServer || !other.CompareTag("Player")) return;
+        //if (!IsServer || !other.CompareTag("Player")) return;
 
         Debug.Log(other.gameObject.tag + " - " + other.gameObject.layer);
         if (other.gameObject.layer == LayerMask.NameToLayer("Red"))
@@ -52,7 +52,7 @@ public class CapturePointCtrl : NetworkBehaviour
 
     private void OnTriggerExit2D(Collider2D other)
     {
-        if (!IsServer || !other.CompareTag("Player")) return;
+        //if (!IsServer || !other.CompareTag("Player")) return;
 
         if (other.gameObject.layer == LayerMask.NameToLayer("Red"))
         {
@@ -86,7 +86,7 @@ public class CapturePointCtrl : NetworkBehaviour
 
     void Update()
     {
-        if (!IsServer) return;
+        //if (!IsServer) return;
         
         if (_inZoneTeam == Team.None)
         {
@@ -115,6 +115,9 @@ public class CapturePointCtrl : NetworkBehaviour
                 _redScore = 100;
                 Debug.Log("Red Win!");
             }
+
+            // UI
+            UIManager.Instance.RedScore = (int)_redScore;
         }
         else if (team == Team.Blue)
         {
@@ -124,6 +127,9 @@ public class CapturePointCtrl : NetworkBehaviour
                 _blueScore = 100;
                 Debug.Log("Blue Win!");
             }
+
+            // UI
+            UIManager.Instance.BlueScore = (int)_blueScore;
         }
     }
 
@@ -155,5 +161,9 @@ public class CapturePointCtrl : NetworkBehaviour
                 _zoneOwnerTeam = Team.None;
             }
         }
+
+
+        // UI
+        UIManager.Instance.OccGauge = _zoneGauge;
     }
 }

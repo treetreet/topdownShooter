@@ -11,8 +11,8 @@ public class PlayerMovement : MonoBehaviour
     public Transform FirePoint;
     private float _bulletSpeed = 100f;
     private Transform _tr;
-    private float _initHp;
-    private float _maxHp = 100f;
+    private int _initHp;
+    private int _maxHp = 100;
     private float _fireRate = 0.2f;
     private float _fireTimer = 0f;
 
@@ -23,11 +23,23 @@ public class PlayerMovement : MonoBehaviour
 
     public GameObject HitEffectPrefab;
 
+    private PlayerUI _playerUI;
+
+    private void Awake()
+    {
+        _playerUI = GetComponent<PlayerUI>();
+    }
+
     void Start()
     {
         _initHp = _maxHp;
         _tr = transform;
         _currentAmmo = _maxAmmo;
+
+
+        // UI
+        _playerUI.HP = _initHp;
+        _playerUI.RemainBullet = _currentAmmo;
     }
 
     void OnTriggerEnter2D(Collider2D coll)
@@ -41,6 +53,9 @@ public class PlayerMovement : MonoBehaviour
 
             GameObject hitEffect = Instantiate(HitEffectPrefab, transform.position, Quaternion.identity);
             Destroy(hitEffect, 3f);
+
+            // UI
+            _playerUI.HP = _initHp;
         }
     }
 
@@ -117,6 +132,10 @@ public class PlayerMovement : MonoBehaviour
         Destroy(bullet, 3f);
 
         _currentAmmo--;
+
+
+        // UI
+        _playerUI.RemainBullet = _currentAmmo;
     }
 
     IEnumerator Reload()
@@ -127,6 +146,10 @@ public class PlayerMovement : MonoBehaviour
         _currentAmmo = _maxAmmo;
         _isReloading = false;
         Debug.Log("재장전 완료");
+
+
+        // UI
+        _playerUI.RemainBullet = _currentAmmo;
     }
 
     IEnumerator Respawn()
