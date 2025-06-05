@@ -1,55 +1,71 @@
-using System;
-using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
+using System.Collections;
 
-public class PlayerMovement : MonoBehaviour
+public class PlayerMovement : NetworkBehaviour
 {
     public Transform RespawnPoint;
-
-    private float _moveSpeed = 5f;
     public GameObject BulletPrefab;
     public Transform FirePoint;
-    private float _bulletSpeed = 100f;
-    private Transform _tr;
-    private float _initHp;
-    private float _maxHp = 100f;
-    private float _fireRate = 0.2f;
-    private float _fireTimer = 0f;
-
-    private int _maxAmmo = 30;
-    private int _currentAmmo;
-    private bool _isReloading = false;
-    private float _reloadTime = 2f;
-
     public GameObject HitEffectPrefab;
 
-    void Start()
-    {
-        _initHp = _maxHp;
-        _tr = transform;
-        _currentAmmo = _maxAmmo;
-    }
+    private Transform _tr;
+    private float _moveSpeed = 5f;
+    private float _bulletSpeed = 100f;
+    private float _fireRate = 0.2f;
+    private float _fireTimer = 0f;
+    private float _reloadTime = 2f;
 
-    void OnTriggerEnter2D(Collider2D coll)
+    private NetworkVariable<float> _hp = new(100f);
+    private float _maxHp = 100f;
+
+    private NetworkVariable<int> _currentAmmo = new(30);
+    private int _maxAmmo = 30;
+
+    private bool _isReloading = false;
+
+    public override void OnNetworkSpawn()
     {
-        if (coll.gameObject.tag == "Bullet")
+        if (IsOwner)
         {
-            _initHp -= 10;
-            Destroy(coll.gameObject);
-            
-            StartCoroutine(Camera.main.GetComponent<PlayerCamera>().Shake(0.1f, 0.1f));
-
-            GameObject hitEffect = Instantiate(HitEffectPrefab, transform.position, Quaternion.identity);
-            Destroy(hitEffect, 3f);
+            _tr = transform;
         }
     }
 
     void Update()
     {
+        if (!IsOwner) return;
+
+        Fire();
+
+        if (_currentAmmo.Value <= 0 && !_isReloading)
+        {
+            StartCoroutine(Reload());
+        }
+
+        if (_hp.Value <= 0 && !_isReloading)
+        {
+            _isReloading = true;
+            RespawnServerRpc();
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        if (!IsOwner) return;
+
+        float h = Input.GetAxis("Horizontal");
+        float v = Input.GetAxis("Vertical");
+
+        Vector3 dir = new Vector3(h, v, 0f);
+        MoveServerRpc(dir);
+    }
+
+    void Fire()
+    {
         Aim();
 
-        if (_isReloading)
-            return;
+        if (_isReloading) return;
 
         _fireTimer -= Time.deltaTime;
 
@@ -59,40 +75,11 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        if (Input.GetMouseButton(0) && _fireTimer <= 0f && _currentAmmo > 0)
+        if (Input.GetMouseButton(0) && _fireTimer <= 0f && _currentAmmo.Value > 0)
         {
-            Shoot();
+            ShootServerRpc(FirePoint.position, FirePoint.rotation);
             _fireTimer = _fireRate;
-            Debug.Log("남은 총알 : " + _currentAmmo);
         }
-
-        if (_currentAmmo <= 0)
-        {
-            StartCoroutine(Reload());
-        }
-
-        if (_initHp <= 0)
-        {
-
-            SetChildrenRenderersEnabled(false);
-            SetChildrenCollidersEnabled(false);
-
-            _isReloading = true;
-            StartCoroutine(Respawn());
-        }
-    }
-
-    private void FixedUpdate()
-    {
-        Move();
-    }
-
-    void Move()
-    {
-        float h = Input.GetAxis("Horizontal");
-        float v = Input.GetAxis("Vertical");
-        Vector3 dir = new Vector3(h, v, 0);
-        _tr.Translate(dir.normalized * Time.deltaTime * _moveSpeed, Space.World);
     }
 
     void Aim()
@@ -103,20 +90,26 @@ public class PlayerMovement : MonoBehaviour
         Vector2 direction = (mouseWorld - _tr.position).normalized;
 
         FirePoint.position = _tr.position + (Vector3)(direction);
-
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+
         FirePoint.rotation = Quaternion.Euler(0, 0, angle - 90f);
         _tr.rotation = Quaternion.Euler(0, 0, angle - 90f);
     }
 
-    void Shoot()
+    [ServerRpc]
+    void MoveServerRpc(Vector3 dir)
     {
-        GameObject bullet = Instantiate(BulletPrefab, FirePoint.position, FirePoint.rotation);
-        Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();
-        rb.AddForce(bullet.transform.up * _bulletSpeed);
+        transform.Translate(dir.normalized * Time.fixedDeltaTime * _moveSpeed, Space.World);
+    }
+
+    [ServerRpc]
+    void ShootServerRpc(Vector3 firePos, Quaternion fireRot)
+    {
+        GameObject bullet = Instantiate(BulletPrefab, firePos, fireRot);
+        bullet.GetComponent<Rigidbody2D>().AddForce(bullet.transform.up * _bulletSpeed);
         Destroy(bullet, 3f);
 
-        _currentAmmo--;
+        _currentAmmo.Value--;
     }
 
     IEnumerator Reload()
@@ -124,9 +117,21 @@ public class PlayerMovement : MonoBehaviour
         _isReloading = true;
         Debug.Log("재장전 중");
         yield return new WaitForSeconds(_reloadTime);
-        _currentAmmo = _maxAmmo;
+        ReloadServerRpc();
+    }
+
+    [ServerRpc]
+    void ReloadServerRpc()
+    {
+        _currentAmmo.Value = _maxAmmo;
         _isReloading = false;
         Debug.Log("재장전 완료");
+    }
+
+    [ServerRpc]
+    void RespawnServerRpc()
+    {
+        StartCoroutine(Respawn());
     }
 
     IEnumerator Respawn()
@@ -135,35 +140,32 @@ public class PlayerMovement : MonoBehaviour
 
         if (RespawnPoint != null)
         {
-            _tr.position = RespawnPoint.position;
-            _tr.rotation = RespawnPoint.rotation;
+            transform.position = RespawnPoint.position;
+            transform.rotation = RespawnPoint.rotation;
         }
 
-        SetChildrenRenderersEnabled(true);
-        SetChildrenCollidersEnabled(true);
-
-        _initHp = _maxHp;
-        _currentAmmo = _maxAmmo;
+        _hp.Value = _maxHp;
+        _currentAmmo.Value = _maxAmmo;
         _isReloading = false;
-
-        Debug.Log("리스폰 완료");
     }
 
-    void SetChildrenRenderersEnabled(bool enabled)
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        Renderer[] renderers = GetComponentsInChildren<Renderer>();
-        foreach (Renderer rend in renderers)
+        if (!IsServer) return;
+
+        if (other.gameObject.CompareTag("Bullet"))
         {
-            rend.enabled = enabled;
+            _hp.Value -= 10;
+            Destroy(other.gameObject);
+
+            //SpawnHitEffectClientRpc(transform.position);
         }
     }
 
-    void SetChildrenCollidersEnabled(bool enabled)
+    /*[ClientRpc]
+    void SpawnHitEffectClientRpc(Vector3 position)
     {
-        Collider2D[] colliders = GetComponentsInChildren<Collider2D>();
-        foreach (Collider2D col in colliders)
-        {
-            col.enabled = enabled;
-        }
-    }
+        GameObject hitEffect = Instantiate(HitEffectPrefab, position, Quaternion.identity);
+        Destroy(hitEffect, 3f);
+    }*/
 }
