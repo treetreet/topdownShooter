@@ -63,7 +63,7 @@ public class SoundManager : MonoBehaviour
                 for (int i = 0; i < soundNames.Length - 1; i++)
                     _audioSources[i] = transform.Find($"{soundNames[i]}").GetComponent<AudioSource>();
             }
-            //DontDestroyOnLoad(sound);
+            DontDestroyOnLoad(sound);
             s_instance = sound.GetComponent<SoundManager>();
         }
 

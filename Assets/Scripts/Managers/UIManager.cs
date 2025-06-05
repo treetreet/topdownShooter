@@ -19,41 +19,89 @@ public class UIManager : MonoBehaviour
     TextMeshProUGUI _redScoreText;
     TextMeshProUGUI _blueScoreText;
 
+    public float OccGauge
+    {
+        get { return _occGauge.value; }
+        set
+        {
 
+            if (value > 0)
+            {
+                _occGauge.value = value;
+                RefreshOccGauge(TeamColor.Red);
+            }
+            else
+            {
+                _occGauge.value = value * -1;
+                RefreshOccGauge(TeamColor.Blue);
+            }
+        }
+    }
+
+    public int RedScore
+    {
+        set
+        {
+            _redScoreText.text = value.ToString();
+        }
+    }
+    public int BlueScore
+    {
+        set
+        {
+            _blueScoreText.text = value.ToString();
+        }
+    }
+
+    private void Awake()
+    {
+        if (s_instance == null)
+        {
+            GameObject go = GameObject.Find("UIManager");
+            if (go == null)
+            {
+                go = new GameObject { name = "UIManager" };
+                go.AddComponent<SoundManager>();
+            }
+
+            s_instance = go.GetComponent<UIManager>();
+        }
+    }
 
     private void Start()
     {
         _optionPage = GameObject.Find("OptionPage").GetComponent<Canvas>();
         if (_optionPage)
-            _optionPage.enabled = false;
+            _optionPage.gameObject.SetActive(false);
 
         _occGauge = GameObject.Find("OccGauge").GetComponent<Slider>();
+        _occGauge.value = 0;
         _redScoreText = GameObject.Find("RedScoreText").GetComponent<TextMeshProUGUI>();
         _blueScoreText = GameObject.Find("BlueScoreText").GetComponent<TextMeshProUGUI>();
 
         _fillAreaImage = _occGauge.transform.Find("Fill").GetComponent<Image>();
 
 
-        RefreshOccGauge(TeamColor.Red);
+        //RefreshOccGauge(TeamColor.Red);
     }
 
 
     public void OnPauseClicked()
     {
-        _optionPage.enabled = true;
+        _optionPage.gameObject.SetActive(true);
     }
 
     public void OnPauseBackClicked()
     {
-        _optionPage.enabled = false;
+        _optionPage.gameObject.SetActive(false);
     }
 
 
-    public void RefreshScoreUI()
-    {
-        RefreshRedScoreText();
-        RefreshBlueScoreText();
-    }
+    //public void RefreshScoreUI()
+    //{
+    //    RefreshRedScoreText();
+    //    RefreshBlueScoreText();
+    //}
 
     public void RefreshOccGauge(TeamColor teamColor)
     {
@@ -67,19 +115,16 @@ public class UIManager : MonoBehaviour
                 _fillAreaImage.color = Color.blue;
                 break;
         }
-
-        // temp
-        _occGauge.value = 30;
     }
 
-    public void RefreshRedScoreText()
+    public void RefreshRedScoreText(int value)
     {
         // TODO
-        _redScoreText.text = "30";
+        _redScoreText.text = value.ToString();
     }
-    public void RefreshBlueScoreText()
+    public void RefreshBlueScoreText(int value)
     {
         // TODO
-        _blueScoreText.text = "30";
+        _blueScoreText.text = value.ToString();
     }
 }

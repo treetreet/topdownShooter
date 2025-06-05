@@ -15,6 +15,11 @@ public class LobbyManager : MonoBehaviour
     public event PlayerRemoved OnPlayerRemoved;
     public event Action<bool> OnStartConditionChanged;  // 버튼 활성화 상태 변경 알림
 
+
+    // UI
+    GameObject _optionPage;
+
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
@@ -22,6 +27,13 @@ public class LobbyManager : MonoBehaviour
 
         PlayerLobbyData.OnPlayerSpawned += RegisterPlayer;
         PlayerLobbyData.OnPlayerDespawn += UnregisterPlayer;
+    }
+
+    private void Start()
+    {
+        // UI
+        _optionPage = GameObject.Find("OptionPage");
+        _optionPage.SetActive(false);
     }
 
 
@@ -52,6 +64,17 @@ public class LobbyManager : MonoBehaviour
         Debug.Log("[Check Start Condition]" + redCount + " red, " + blueCount + " blue, " + allSelected + " all selected, " + playerDataList.Count + " player data Count");
 
         OnStartConditionChanged?.Invoke(canStart);
+    }
+
+
+    public void OnOptionClicked()
+    {
+        _optionPage.SetActive(true);
+    }
+
+    public void OnBackClicked()
+    {
+        _optionPage.SetActive(false);
     }
     
     private void OnDestroy()

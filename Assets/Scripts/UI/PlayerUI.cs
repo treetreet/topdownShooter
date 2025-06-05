@@ -16,6 +16,28 @@ public class PlayerUI : MonoBehaviour
     int _hp = 50;
     int _maxHp = 100;
 
+    public int RemainBullet
+    {
+        get { return _remainBullet; }
+        set
+        {
+            _remainBullet = value;
+            RefreshPlayerUI();
+        }
+    }
+    
+    public int HP
+    {
+        get { return _hp; }
+        set
+        {
+            _hp = value;
+            RefreshPlayerUI();
+        }
+    }
+
+
+
 
     void Start()
     {
@@ -23,6 +45,8 @@ public class PlayerUI : MonoBehaviour
         _bulletText = GameObject.Find("BulletText").GetComponent<TextMeshProUGUI>();
         _hpSlider = GameObject.Find("HpSlider").GetComponent <Slider>();
 
+        _hpSlider.value = _hp;
+        _remainBullet = _maxBullet;
 
         RefreshBulletText();
         RefreshHp();
