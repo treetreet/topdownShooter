@@ -24,19 +24,25 @@ public class PlayerLobbyData : NetworkBehaviour
     public void SetTeamServerRpc(int team)
     {
         teamId.Value = team;
-        if (team == (int)Team.Red)
-        {
-            _playerSpriteRenderer.color = Color.red;
-            gameObject.layer = LayerMask.NameToLayer("Red");
-        }
-        else if (team == (int)Team.Blue)
-        {
-            _playerSpriteRenderer.color = Color.blue;
-            gameObject.layer = LayerMask.NameToLayer("Blue");
-        }
     }
     public override void OnNetworkSpawn()
     {
+        teamId.OnValueChanged += (oldValue, newValue) =>
+        {
+            if (_playerSpriteRenderer == null) return;
+
+            if (newValue == (int)Team.Red)
+            {
+                _playerSpriteRenderer.color = Color.red;
+                gameObject.layer = LayerMask.NameToLayer("Red");
+            }
+            else if (newValue == (int)Team.Blue)
+            {
+                _playerSpriteRenderer.color = Color.blue;
+                gameObject.layer = LayerMask.NameToLayer("Blue");
+            }
+        };
+        
         if (IsOwner)
         {
             SubmitNameServerRpc("Player " + OwnerClientId);
