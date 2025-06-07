@@ -33,7 +33,7 @@ public class LobbyManager : MonoBehaviour
     {
         // UI
         _optionPage = GameObject.Find("OptionPage");
-        _optionPage.SetActive(false);
+//        _optionPage.SetActive(false);
     }
 
 

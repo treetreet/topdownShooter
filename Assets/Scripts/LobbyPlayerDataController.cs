@@ -30,7 +30,7 @@ public class LobbyPlayerDataController : MonoBehaviour
     {
         // 씬 전환, 게임 시작 로직 실행
         Debug.Log("게임 시작!");
-        NetworkManager.Singleton.SceneManager.LoadScene("GameScene", LoadSceneMode.Single);
+        NetworkManager.Singleton.SceneManager.LoadScene("UI_Game", LoadSceneMode.Single);
     }
 
     //Button UI 관련 동기화.
