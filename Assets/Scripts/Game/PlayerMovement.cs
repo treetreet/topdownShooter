@@ -106,6 +106,18 @@ public class PlayerMovement : NetworkBehaviour
     void ShootServerRpc(Vector3 firePos, Quaternion fireRot)
     {
         GameObject bullet = Instantiate(BulletPrefab, firePos, fireRot);
+
+        // 총알에 NetworkObject 컴포넌트가 있어야 함
+        NetworkObject netObj = bullet.GetComponent<NetworkObject>();
+        if (netObj != null)
+        {
+            netObj.Spawn(); // 네트워크 전체에 동기화
+        }
+        else
+        {
+            Debug.LogError("Bullet prefab에 NetworkObject가 없습니다!");
+        }
+
         bullet.GetComponent<Rigidbody2D>().AddForce(bullet.transform.up * _bulletSpeed);
         Destroy(bullet, 3f);
 
