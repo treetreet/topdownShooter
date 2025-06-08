@@ -83,31 +83,30 @@ public class LobbyManager : MonoBehaviour
         foreach(PlayerLobbyData i in playerDataList)
         {
             PlayerMovement p = i.gameObject.GetComponent<PlayerMovement>();
-            p.RespawnPoint = p.gameObject.transform;
             switch (k)
             {
                 case 0:
-                    p.RespawnPoint.position = new Vector2(0, 4);
+                    p.RespawnPoint = new Vector2(0, 4);
                     p.gameObject.transform.position = new Vector2(0, 4);
                     break;
                 case 1:
-                    p.RespawnPoint.position = new Vector2(0, -4);
+                    p.RespawnPoint = new Vector2(0, -4);
                     p.gameObject.transform.position = new Vector2(0, -4);
                     break;
                 case 2:
-                    p.RespawnPoint.position = new Vector2(-2.828f, 2.828f);
+                    p.RespawnPoint = new Vector2(-2.828f, 2.828f);
                     p.gameObject.transform.position = new Vector2(-2.828f, 2.828f);
                     break;
                 case 3:
-                    p.RespawnPoint.position = new Vector2(2.828f, -2.828f);
+                    p.RespawnPoint = new Vector2(2.828f, -2.828f);
                     p.gameObject.transform.position = new Vector2(2.828f, -2.828f);
                     break;
                 case 4:
-                    p.RespawnPoint.position = new Vector2(-4, 0);
+                    p.RespawnPoint = new Vector2(-4, 0);
                     p.gameObject.transform.position = new Vector2(-4, 0);
                     break;
                 case 5:
-                    p.RespawnPoint.position = new Vector2(4, 0);
+                    p.RespawnPoint = new Vector2(4, 0);
                     p.gameObject.transform.position = new Vector2(4, 0);
                     break;
             }

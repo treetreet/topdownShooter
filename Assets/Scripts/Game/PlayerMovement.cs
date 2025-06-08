@@ -4,7 +4,7 @@ using System.Collections;
 
 public class PlayerMovement : NetworkBehaviour
 {
-    public Transform RespawnPoint;
+    public Vector2 RespawnPoint;
     public GameObject BulletPrefab;
     public Transform FirePoint;
     public GameObject HitEffectPrefab;
@@ -177,8 +177,7 @@ public class PlayerMovement : NetworkBehaviour
 
         if (RespawnPoint != null)
         {
-            transform.position = RespawnPoint.position;
-            transform.rotation = RespawnPoint.rotation;
+            transform.position = RespawnPoint;
         }
 
         _hp.Value = _maxHp;
