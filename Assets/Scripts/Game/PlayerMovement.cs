@@ -139,12 +139,12 @@ public class PlayerMovement : NetworkBehaviour
                 _netIsDead.Value = true;
                 _isReloading = true;
 
-                DieClientRpc(OwnerClientId); // ✅ 죽은 플레이어 ID 전송
+                DieServerRpc(OwnerClientId); // ✅ 죽은 플레이어 ID 전송
                 StartCoroutine(Respawn());
             }
         }
     }
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     void DieServerRpc(ulong deadPlayerId)
     {
         foreach (var obj in FindObjectsOfType<PlayerMovement>())
@@ -187,9 +187,9 @@ public class PlayerMovement : NetworkBehaviour
         _isDead = false;
         _netIsDead.Value = false;
 
-        ReviveClientRpc(OwnerClientId);
+        ReviveServerRpc(OwnerClientId);
     }
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     void ReviveServerRpc(ulong revivedPlayerId)
     {
         foreach (var obj in FindObjectsOfType<PlayerMovement>())

@@ -23,6 +23,7 @@ public class LobbyPlayerDataController : MonoBehaviour
         startGameButton.interactable = false;
         
         startGameButton.onClick.AddListener(StartGameServerRpc);
+        startGameButton.onClick.AddListener(LobbyManager.Instance.OnSceneStart);
     }
 
     [ServerRpc(RequireOwnership = false)]
