@@ -144,7 +144,19 @@ public class PlayerMovement : NetworkBehaviour
             }
         }
     }
-
+    [ServerRpc]
+    void DieServerRpc(ulong deadPlayerId)
+    {
+        foreach (var obj in FindObjectsOfType<PlayerMovement>())
+        {
+            if (obj.OwnerClientId == deadPlayerId)
+            {
+                obj._netIsDead.Value = true;
+                obj.DieClientRpc(deadPlayerId);
+                break;
+            }
+        }
+    }
     [ClientRpc]
     void DieClientRpc(ulong deadPlayerId)
     {
@@ -152,9 +164,9 @@ public class PlayerMovement : NetworkBehaviour
         {
             if (obj.OwnerClientId == deadPlayerId)
             {
-                obj._netIsDead.Value = true;
                 obj.GetComponent<SpriteRenderer>().enabled = false;
                 obj.GetComponent<Collider2D>().enabled = false;
+                break;
             }
         }
     }
@@ -177,7 +189,19 @@ public class PlayerMovement : NetworkBehaviour
 
         ReviveClientRpc(OwnerClientId);
     }
-
+    [ServerRpc]
+    void ReviveServerRpc(ulong revivedPlayerId)
+    {
+        foreach (var obj in FindObjectsOfType<PlayerMovement>())
+        {
+            if (obj.OwnerClientId == revivedPlayerId)
+            {
+                obj._netIsDead.Value = false;
+                obj.ReviveClientRpc(revivedPlayerId);
+                break;
+            }
+        }
+    }
     [ClientRpc]
     void ReviveClientRpc(ulong revivedPlayerId)
     {
@@ -185,9 +209,9 @@ public class PlayerMovement : NetworkBehaviour
         {
             if (obj.OwnerClientId == revivedPlayerId)
             {
-                obj._netIsDead.Value = false;
                 obj.GetComponent<SpriteRenderer>().enabled = true;
                 obj.GetComponent<Collider2D>().enabled = true;
+                break;
             }
         }
     }
