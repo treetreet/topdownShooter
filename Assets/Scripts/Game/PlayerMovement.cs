@@ -22,37 +22,31 @@ public class PlayerMovement : NetworkBehaviour
     private NetworkVariable<int> _currentAmmo = new(30);
     private int _maxAmmo = 30;
 
+    private NetworkVariable<bool> _netIsDead = new(false); // ✅ 사망 상태 공유
+    private bool _isDead = false;
     private bool _isReloading = false;
 
     public override void OnNetworkSpawn()
     {
-        if (IsOwner)
-        {
-            _tr = transform;
-        }
+        _tr = transform;
     }
 
-    void Update()
+    private void Update()
     {
-        if (!IsOwner) return;
+        if (!IsOwner || _netIsDead.Value) return;
 
         Fire();
 
-        if (_currentAmmo.Value <= 0 && !_isReloading)
+        // 🔁 클라이언트에서 재장전 키 입력 → 서버에게 요청
+        if (Input.GetKeyDown(KeyCode.R) && !_isReloading && _currentAmmo.Value < _maxAmmo)
         {
-            StartCoroutine(Reload());
-        }
-
-        if (_hp.Value <= 0 && !_isReloading)
-        {
-            _isReloading = true;
-            RespawnServerRpc();
+            ReloadRequestServerRpc();
         }
     }
 
     private void FixedUpdate()
     {
-        if (!IsOwner) return;
+        if (!IsOwner || _netIsDead.Value) return;
 
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
@@ -69,12 +63,6 @@ public class PlayerMovement : NetworkBehaviour
 
         _fireTimer -= Time.deltaTime;
 
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            StartCoroutine(Reload());
-            return;
-        }
-
         if (Input.GetMouseButton(0) && _fireTimer <= 0f && _currentAmmo.Value > 0)
         {
             ShootServerRpc(FirePoint.position, FirePoint.rotation);
@@ -88,12 +76,13 @@ public class PlayerMovement : NetworkBehaviour
         mouseWorld.z = 0;
 
         Vector2 direction = (mouseWorld - _tr.position).normalized;
-
-        FirePoint.position = _tr.position + (Vector3)(direction);
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        Vector3 newRotation = new Vector3(0, 0, angle - 90f);
 
-        FirePoint.rotation = Quaternion.Euler(0, 0, angle - 90f);
-        _tr.rotation = Quaternion.Euler(0, 0, angle - 90f);
+        _tr.rotation = Quaternion.Euler(newRotation);
+        FirePoint.rotation = Quaternion.Euler(newRotation);
+
+        UpdateRotationServerRpc(newRotation);
     }
 
     [ServerRpc]
@@ -106,16 +95,10 @@ public class PlayerMovement : NetworkBehaviour
     void ShootServerRpc(Vector3 firePos, Quaternion fireRot)
     {
         GameObject bullet = Instantiate(BulletPrefab, firePos, fireRot);
-
-        // 총알에 NetworkObject 컴포넌트가 있어야 함
-        NetworkObject netObj = bullet.GetComponent<NetworkObject>();
+        var netObj = bullet.GetComponent<NetworkObject>();
         if (netObj != null)
         {
-            netObj.Spawn(); // 네트워크 전체에 동기화
-        }
-        else
-        {
-            Debug.LogError("Bullet prefab에 NetworkObject가 없습니다!");
+            netObj.Spawn();
         }
 
         bullet.GetComponent<Rigidbody2D>().AddForce(bullet.transform.up * _bulletSpeed);
@@ -124,26 +107,56 @@ public class PlayerMovement : NetworkBehaviour
         _currentAmmo.Value--;
     }
 
-    IEnumerator Reload()
+    [ServerRpc]
+    void ReloadRequestServerRpc()
+    {
+        if (_isReloading || _currentAmmo.Value == _maxAmmo) return;
+        StartCoroutine(ReloadCoroutine());
+    }
+
+    IEnumerator ReloadCoroutine()
     {
         _isReloading = true;
         Debug.Log("재장전 중");
         yield return new WaitForSeconds(_reloadTime);
-        ReloadServerRpc();
-    }
-
-    [ServerRpc]
-    void ReloadServerRpc()
-    {
         _currentAmmo.Value = _maxAmmo;
         _isReloading = false;
         Debug.Log("재장전 완료");
     }
 
-    [ServerRpc]
-    void RespawnServerRpc()
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        StartCoroutine(Respawn());
+        if (!IsServer) return;
+
+        if (other.CompareTag("Bullet"))
+        {
+            _hp.Value -= 10;
+            Destroy(other.gameObject);
+
+            if (_hp.Value <= 0 && !_isDead)
+            {
+                _isDead = true;
+                _netIsDead.Value = true;
+                _isReloading = true;
+
+                DieClientRpc(OwnerClientId); // ✅ 죽은 플레이어 ID 전송
+                StartCoroutine(Respawn());
+            }
+        }
+    }
+
+    [ClientRpc]
+    void DieClientRpc(ulong deadPlayerId)
+    {
+        foreach (var obj in FindObjectsOfType<PlayerMovement>())
+        {
+            if (obj.OwnerClientId == deadPlayerId)
+            {
+                obj._netIsDead.Value = true;
+                obj.GetComponent<SpriteRenderer>().enabled = false;
+                obj.GetComponent<Collider2D>().enabled = false;
+            }
+        }
     }
 
     IEnumerator Respawn()
@@ -159,25 +172,39 @@ public class PlayerMovement : NetworkBehaviour
         _hp.Value = _maxHp;
         _currentAmmo.Value = _maxAmmo;
         _isReloading = false;
+        _isDead = false;
+        _netIsDead.Value = false;
+
+        ReviveClientRpc(OwnerClientId);
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    [ClientRpc]
+    void ReviveClientRpc(ulong revivedPlayerId)
     {
-        if (!IsServer) return;
-
-        if (other.gameObject.CompareTag("Bullet"))
+        foreach (var obj in FindObjectsOfType<PlayerMovement>())
         {
-            _hp.Value -= 10;
-            Destroy(other.gameObject);
-
-            //SpawnHitEffectClientRpc(transform.position);
+            if (obj.OwnerClientId == revivedPlayerId)
+            {
+                obj._netIsDead.Value = false;
+                obj.GetComponent<SpriteRenderer>().enabled = true;
+                obj.GetComponent<Collider2D>().enabled = true;
+            }
         }
     }
 
-    /*[ClientRpc]
-    void SpawnHitEffectClientRpc(Vector3 position)
+    [ServerRpc]
+    void UpdateRotationServerRpc(Vector3 rot)
     {
-        GameObject hitEffect = Instantiate(HitEffectPrefab, position, Quaternion.identity);
-        Destroy(hitEffect, 3f);
-    }*/
+        UpdateRotationClientRpc(rot);
+    }
+
+    [ClientRpc]
+    void UpdateRotationClientRpc(Vector3 rot)
+    {
+        if (!IsOwner)
+        {
+            _tr.rotation = Quaternion.Euler(rot);
+            FirePoint.rotation = Quaternion.Euler(rot);
+        }
+    }
 }
