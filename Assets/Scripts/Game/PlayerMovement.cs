@@ -23,7 +23,7 @@ public class PlayerMovement : NetworkBehaviour
     private int _maxAmmo = 30;
 
     private bool _isReloading = false;
-
+    private bool _isDead = false;
     public override void OnNetworkSpawn()
     {
         if (IsOwner)
@@ -35,8 +35,9 @@ public class PlayerMovement : NetworkBehaviour
     void Update()
     {
         if (!IsOwner) return;
-
-        Fire();
+        if (_isDead) return;
+        
+        Fire(); 
 
         if (_currentAmmo.Value <= 0 && !_isReloading)
         {
@@ -45,6 +46,7 @@ public class PlayerMovement : NetworkBehaviour
 
         if (_hp.Value <= 0 && !_isReloading)
         {
+            _isDead = true;
             _isReloading = true;
             RespawnServerRpc();
         }
@@ -53,6 +55,7 @@ public class PlayerMovement : NetworkBehaviour
     private void FixedUpdate()
     {
         if (!IsOwner) return;
+        if (_isDead) return;
 
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
@@ -143,6 +146,8 @@ public class PlayerMovement : NetworkBehaviour
     [ServerRpc]
     void RespawnServerRpc()
     {
+        GetComponent<SpriteRenderer>().enabled = false;
+        GetComponent<Collider2D>().enabled = false;
         StartCoroutine(Respawn());
     }
 
@@ -155,10 +160,12 @@ public class PlayerMovement : NetworkBehaviour
             transform.position = RespawnPoint.position;
             transform.rotation = RespawnPoint.rotation;
         }
-
+        GetComponent<SpriteRenderer>().enabled = true;
+        GetComponent<Collider2D>().enabled = true;
         _hp.Value = _maxHp;
         _currentAmmo.Value = _maxAmmo;
         _isReloading = false;
+        _isDead = false;
     }
 
     private void OnTriggerEnter2D(Collider2D other)
