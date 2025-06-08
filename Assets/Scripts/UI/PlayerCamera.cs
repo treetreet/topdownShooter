@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 
 public class PlayerCamera : MonoBehaviour
@@ -7,6 +8,16 @@ public class PlayerCamera : MonoBehaviour
     public float smoothSpeed = 0.125f;
     public Vector3 offset;       // 카메라 위치 오프셋
 
+    private void Start()
+    {
+        GameObject[] objs = GameObject.FindGameObjectsWithTag("Player");
+        foreach (GameObject i in objs)
+        {
+            if (i.GetComponent<NetworkObject>().OwnerClientId == NetworkManager.Singleton.LocalClientId)
+                target = i.transform;
+            
+        }
+    }
     void LateUpdate()
     {
         Vector3 desiredPosition = target.position + offset;
