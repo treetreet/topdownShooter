@@ -3066,6 +3066,7 @@ GameObject:
   - component: {fileID: 1833353487}
   - component: {fileID: 1833353485}
   - component: {fileID: 1833353486}
+  - component: {fileID: 1833353488}
   m_Layer: 0
   m_Name: UI Presenter
   m_TagString: Untagged
@@ -3134,6 +3135,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1833353488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1833353484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c10f9f81c98c4c66b0fff44c8373bf90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _redTeamButton: {fileID: 535314489}
+  _blueTeamButton: {fileID: 50635480}
 --- !u!1 &1849424935
 GameObject:
   m_ObjectHideFlags: 0

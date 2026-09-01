@@ -31,8 +31,8 @@ public class PlayerNetworkData : NetworkBehaviour
     }
     private void OnTeamIdChanged(int oldValue, int newValue)
     {
+        Debug.Log($"OnTeamIdChanged {oldValue} -> {newValue}");
         UpdateSpriteColor(newValue);
-        SetTeamServerRpc(newValue);
     }
     private void UpdateSpriteColor(int team)
     {
@@ -56,7 +56,7 @@ public class PlayerNetworkData : NetworkBehaviour
     }
     
     [ServerRpc]
-    private void SetTeamServerRpc(int team)
+    public void SetTeamServerRpc(int team)
     {
         teamId.Value = team;
     }

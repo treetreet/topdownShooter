@@ -17,8 +17,64 @@ public class UINetworkPresenter : NetworkBehaviour
     [SerializeField] private Sprite _redSprite;
     [SerializeField] private Sprite _redSelectedSprite;
     
-    public void UpdateView()
+    
+    public override void OnNetworkSpawn()
     {
+        Debug.Log("OnNetworkSpawn");
+        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+        
+        Debug.Log($"현재 접속자 수: {NetworkManager.Singleton.ConnectedClientsList.Count}");
+
+        foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
+        {
+            Debug.Log($"이미 접속 중인 Client: {client.ClientId}");
+            OnClientConnected(client.ClientId);
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+    }
+
+    private void OnClientConnected(ulong clientId)
+    {
+        Debug.Log("OnClientConnected");
+        if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
+        {
+            Debug.Log("No Client");
+            return;
+        }
+
+        NetworkObject playerObject = client.PlayerObject;
+        if (playerObject == null)
+        {
+            Debug.Log("No Player Object");
+            return;
+        }
+
+        PlayerNetworkData playerData = playerObject.GetComponent<PlayerNetworkData>();
+        playerData.teamId.OnValueChanged += UpdateView;
+    }
+
+    private void OnClientDisconnected(ulong clientId)
+    {
+        if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client)) return;
+        
+        NetworkObject playerObject = client.PlayerObject;
+        if (playerObject == null) return;
+
+        PlayerNetworkData playerData = playerObject.GetComponent<PlayerNetworkData>();
+        playerData.teamId.OnValueChanged -= UpdateView;
+        UpdateView(0,0);
+    }
+
+
+    private void UpdateView(int oldValue, int newValue)
+    {
+        Debug.Log($"UpdateView {oldValue} -> {newValue}");
         ChangeTeamText();
         ChangeTeamImage();
     }
