@@ -15,9 +15,7 @@ public class LobbyPlayerDataController : MonoBehaviour
         {
             startGameButton.interactable = canStart;
         };
-        LobbyManager.Instance.OnPlayerAdded += AddPlayerUI;
         LobbyManager.Instance.OnPlayerAdded += StartButtonSet;
-
         LobbyManager.Instance.OnPlayerRemoved += RemovedPlayerUI;
         
         startGameButton.interactable = false;
@@ -34,29 +32,19 @@ public class LobbyPlayerDataController : MonoBehaviour
         NetworkManager.Singleton.SceneManager.LoadScene("UI_Game", LoadSceneMode.Single);
     }
 
-    //Button UI 관련 동기화.
-    private void AddPlayerUI(PlayerLobbyData playerData)
-    {
-        _entry = Instantiate(playerEntryPrefab, contentParent);
-        var ui = _entry.GetComponent<PlayerLobbyEntryUI>();
-        ui.Bind(playerData);
-    }
-
     private void RemovedPlayerUI()
     {
         Destroy(_entry);
     }
 
-    private void StartButtonSet(PlayerLobbyData playerData)
+    private void StartButtonSet(PlayerNetworkData playerData)
     {
         startGameButton.gameObject.SetActive(NetworkManager.Singleton.IsHost);
     }
 
     private void OnDestroy()
     {
-        LobbyManager.Instance.OnPlayerAdded -= AddPlayerUI;
         LobbyManager.Instance.OnPlayerAdded -= StartButtonSet;
-
         LobbyManager.Instance.OnPlayerRemoved -= RemovedPlayerUI;
     }
 }

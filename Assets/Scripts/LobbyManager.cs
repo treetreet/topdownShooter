@@ -6,38 +6,26 @@ using System.Linq;
 public class LobbyManager : MonoBehaviour
 {
     public static LobbyManager Instance { get; private set; }
-    public List<PlayerLobbyData> playerDataList = new();
+    public List<PlayerNetworkData> playerDataList = new();
 
-    public delegate void PlayerAdded(PlayerLobbyData playerData);
+    public delegate void PlayerAdded(PlayerNetworkData playerData);
     public delegate void PlayerRemoved();
 
     public event PlayerAdded OnPlayerAdded;
     public event PlayerRemoved OnPlayerRemoved;
     public event Action<bool> OnStartConditionChanged;  // 버튼 활성화 상태 변경 알림
-
-
-    // UI
-    GameObject _optionPage;
-
+    
 
     private void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
 
-        PlayerLobbyData.OnPlayerSpawned += RegisterPlayer;
-        PlayerLobbyData.OnPlayerDespawn += UnregisterPlayer;
+        PlayerNetworkData.OnPlayerSpawned += RegisterPlayer;
+        PlayerNetworkData.OnPlayerDespawn += UnregisterPlayer;
     }
 
-    private void Start()
-    {
-        // UI
-        _optionPage = GameObject.Find("OptionPage");
-//        _optionPage.SetActive(false);
-    }
-
-
-    private void RegisterPlayer(PlayerLobbyData data)
+    private void RegisterPlayer(PlayerNetworkData data)
     {
         if(data == null) Debug.LogWarning("register player data is null");
         playerDataList.Add(data);
@@ -46,7 +34,7 @@ public class LobbyManager : MonoBehaviour
         OnPlayerAdded?.Invoke(data);
     }
 
-    private void UnregisterPlayer(PlayerLobbyData data)
+    private void UnregisterPlayer(PlayerNetworkData data)
     {
         playerDataList.Remove(data);
         CheckStartCondition();
@@ -66,21 +54,10 @@ public class LobbyManager : MonoBehaviour
         OnStartConditionChanged?.Invoke(canStart);
     }
 
-
-    public void OnOptionClicked()
-    {
-        _optionPage.SetActive(true);
-    }
-
-    public void OnBackClicked()
-    {
-        _optionPage.SetActive(false);
-    }
-
     public void OnSceneStart()
     {
         int k = 0;
-        foreach(PlayerLobbyData i in playerDataList)
+        foreach(PlayerNetworkData i in playerDataList)
         {
             PlayerMovement p = i.gameObject.GetComponent<PlayerMovement>();
             switch (k)
@@ -116,6 +93,6 @@ public class LobbyManager : MonoBehaviour
     
     private void OnDestroy()
     {
-        PlayerLobbyData.OnPlayerSpawned -= RegisterPlayer;
+        PlayerNetworkData.OnPlayerSpawned -= RegisterPlayer;
     }
 }

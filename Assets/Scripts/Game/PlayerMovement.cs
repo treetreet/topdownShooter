@@ -26,6 +26,8 @@ public class PlayerMovement : NetworkBehaviour
     private bool _isDead = false;
     private bool _isReloading = false;
 
+    private bool _isStarted = false;
+
     public override void OnNetworkSpawn()
     {
         _tr = transform;
@@ -33,7 +35,7 @@ public class PlayerMovement : NetworkBehaviour
 
     private void Update()
     {
-        if (!IsOwner || _netIsDead.Value) return;
+        if (!IsOwner || _netIsDead.Value || !_isStarted) return;
 
         Fire();
 
@@ -46,7 +48,7 @@ public class PlayerMovement : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (!IsOwner || _netIsDead.Value) return;
+        if (!IsOwner || _netIsDead.Value || !_isStarted) return;
 
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
