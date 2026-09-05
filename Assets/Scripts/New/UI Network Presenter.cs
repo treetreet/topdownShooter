@@ -128,7 +128,5 @@ public class UINetworkPresenter : NetworkBehaviour
                 break;
         }
     }
-
-
     #endregion
 }
