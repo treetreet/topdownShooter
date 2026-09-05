@@ -6,7 +6,7 @@ using Unity.Networking.Transport;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class PlayerNetworkData : NetworkBehaviour
+public class PlayerNetworkTeamData : NetworkBehaviour
 {
     /// <summary>
     /// 1 red

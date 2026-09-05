@@ -18,12 +18,12 @@ namespace New
 
         private void OnClickRedTeamButton()
         {
-            NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<PlayerNetworkData>().SetTeamServerRpc(1);
+            NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<PlayerNetworkTeamData>().SetTeamServerRpc(1);
         }
 
         private void OnClickBlueTeamButton()
         {
-            NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<PlayerNetworkData>().SetTeamServerRpc(2);
+            NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<PlayerNetworkTeamData>().SetTeamServerRpc(2);
         }
     }
 }

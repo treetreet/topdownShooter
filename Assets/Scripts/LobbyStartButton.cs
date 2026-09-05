@@ -40,11 +40,11 @@ public class LobbyStartButton : MonoBehaviour
         {
             NetworkObject player = client.PlayerObject;
             if (player == null) continue;
-            PlayerNetworkData playerData = player.GetComponent<PlayerNetworkData>();
-            if (playerData == null) continue;
+            PlayerNetworkTeamData playerTeamData = player.GetComponent<PlayerNetworkTeamData>();
+            if (playerTeamData == null) continue;
 
             //red팀이면 +1, blue팀이면 -1, 팀 선택 인원이 없다면 return false
-            switch (playerData.teamId.Value)
+            switch (playerTeamData.teamId.Value)
             {
                 case 1 :  playerCountGap++; break;
                 case 2 :  playerCountGap--; break;

@@ -56,7 +56,7 @@ public class UINetworkPresenter : NetworkBehaviour
         if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client)) return;
         if (client.PlayerObject == null) return;
 
-        client.PlayerObject.GetComponent<PlayerNetworkData>().teamId.OnValueChanged += ChangeTeamCount;
+        client.PlayerObject.GetComponent<PlayerNetworkTeamData>().teamId.OnValueChanged += ChangeTeamCount;
     }
 
     private void PlayerDisconnected(ulong clientId)
@@ -75,10 +75,10 @@ public class UINetworkPresenter : NetworkBehaviour
         {
             NetworkObject player = client.PlayerObject;
             if (player == null) continue;
-            PlayerNetworkData playerData = player.GetComponent<PlayerNetworkData>();
-            if (playerData == null) continue;
+            PlayerNetworkTeamData playerTeamData = player.GetComponent<PlayerNetworkTeamData>();
+            if (playerTeamData == null) continue;
             
-            NetworkVariable<int> teamId = playerData.teamId;
+            NetworkVariable<int> teamId = playerTeamData.teamId;
             switch (teamId.Value)
             {
                 case 1: redTeamPlayers++; break;
@@ -107,10 +107,10 @@ public class UINetworkPresenter : NetworkBehaviour
     {
         NetworkObject player = NetworkManager.Singleton.LocalClient.PlayerObject;
         if (player == null) return;
-        PlayerNetworkData playerData = player.GetComponent<PlayerNetworkData>();
-        if (playerData == null) return;
+        PlayerNetworkTeamData playerTeamData = player.GetComponent<PlayerNetworkTeamData>();
+        if (playerTeamData == null) return;
 
-        NetworkVariable<int> teamId = playerData.teamId;
+        NetworkVariable<int> teamId = playerTeamData.teamId;
 
         switch (teamId.Value)
         {
