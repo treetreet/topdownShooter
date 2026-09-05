@@ -17,61 +17,38 @@ public class UINetworkPresenter : NetworkBehaviour
     [SerializeField] private Sprite _redSprite;
     [SerializeField] private Sprite _redSelectedSprite;
     
-    
-    public override void OnNetworkSpawn()
+    public static UINetworkPresenter Instance;
+
+    private void Awake()
     {
-        Debug.Log("OnNetworkSpawn");
-        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this.gameObject);
+        }
+        Instance = this;
+
+        if (NetworkManager.Singleton.LocalClient.PlayerObject == null) return;
+        NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<PlayerNetworkData>().teamId.OnValueChanged += UpdateView;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
         
-        Debug.Log($"현재 접속자 수: {NetworkManager.Singleton.ConnectedClientsList.Count}");
-
-        foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
-        {
-            Debug.Log($"이미 접속 중인 Client: {client.ClientId}");
-            OnClientConnected(client.ClientId);
-        }
+        if (NetworkManager.Singleton.LocalClient.PlayerObject == null) return;
+        NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<PlayerNetworkData>().teamId.OnValueChanged -= UpdateView;
     }
-
-    public override void OnNetworkDespawn()
+    
+    public void OnPlayerSpawned(PlayerNetworkData playerData)
     {
-        NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
-        NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
-    }
-
-    private void OnClientConnected(ulong clientId)
-    {
-        Debug.Log("OnClientConnected");
-        if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client))
-        {
-            Debug.Log("No Client");
-            return;
-        }
-
-        NetworkObject playerObject = client.PlayerObject;
-        if (playerObject == null)
-        {
-            Debug.Log("No Player Object");
-            return;
-        }
-
-        PlayerNetworkData playerData = playerObject.GetComponent<PlayerNetworkData>();
         playerData.teamId.OnValueChanged += UpdateView;
     }
-
-    private void OnClientDisconnected(ulong clientId)
+    public void OnPlayerDespawned(PlayerNetworkData playerData)
     {
-        if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client)) return;
-        
-        NetworkObject playerObject = client.PlayerObject;
-        if (playerObject == null) return;
-
-        PlayerNetworkData playerData = playerObject.GetComponent<PlayerNetworkData>();
         playerData.teamId.OnValueChanged -= UpdateView;
         UpdateView(0,0);
     }
-
-
+    
     private void UpdateView(int oldValue, int newValue)
     {
         Debug.Log($"UpdateView {oldValue} -> {newValue}");

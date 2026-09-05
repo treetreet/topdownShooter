@@ -1,34 +1,39 @@
 using Unity.Netcode;
 using System;
+using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
 
 public class PlayerNetworkData : NetworkBehaviour
 {
-    public static event Action<PlayerNetworkData> OnPlayerSpawned;
-    public static event Action<PlayerNetworkData> OnPlayerDespawn;
-    
     /// <summary>
     /// 1 red
     /// 2 blue
     /// </summary>
-    public NetworkVariable<int> teamId = new NetworkVariable<int>(0); // 0: 선택 안함, 1: Red, 2: Blue
-    
-    private SpriteRenderer _playerSpriteRenderer;
+    public NetworkVariable<int> teamId = new NetworkVariable<int>(0);
 
+    private SpriteRenderer _playerSpriteRenderer;
 
     public override void OnNetworkSpawn()
     {
         _playerSpriteRenderer = gameObject.GetComponent<SpriteRenderer>();
-        
+
         teamId.OnValueChanged += OnTeamIdChanged;
-        OnPlayerSpawned?.Invoke(this);
+        if (UINetworkPresenter.Instance != null)
+        {
+            UINetworkPresenter.Instance.OnPlayerSpawned(this);
+        }
     }
+
     public override void OnNetworkDespawn()
     {
-        teamId.OnValueChanged += OnTeamIdChanged;
-        OnPlayerDespawn?.Invoke(this);
+        teamId.OnValueChanged -= OnTeamIdChanged;
+        if (UINetworkPresenter.Instance != null)
+        {
+            UINetworkPresenter.Instance.OnPlayerDespawned(this);
+        }
     }
+
     private void OnTeamIdChanged(int oldValue, int newValue)
     {
         Debug.Log($"OnTeamIdChanged {oldValue} -> {newValue}");

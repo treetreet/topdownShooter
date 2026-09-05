@@ -16,13 +16,20 @@ public class LobbyManager : MonoBehaviour
     public event Action<bool> OnStartConditionChanged;  // 버튼 활성화 상태 변경 알림
     
 
+    
     private void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this; ;
+    }
 
-        PlayerNetworkData.OnPlayerSpawned += RegisterPlayer;
-        PlayerNetworkData.OnPlayerDespawn += UnregisterPlayer;
+    private void OnDestroy()
+    {
+        if(Instance == this) Instance = null;
     }
 
     private void RegisterPlayer(PlayerNetworkData data)
@@ -89,10 +96,5 @@ public class LobbyManager : MonoBehaviour
             }
             k++;
         }
-    }
-    
-    private void OnDestroy()
-    {
-        PlayerNetworkData.OnPlayerSpawned -= RegisterPlayer;
     }
 }
