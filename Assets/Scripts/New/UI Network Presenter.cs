@@ -1,4 +1,5 @@
 using TMPro;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,48 +18,99 @@ public class UINetworkPresenter : NetworkBehaviour
     [SerializeField] private Sprite _redSprite;
     [SerializeField] private Sprite _redSelectedSprite;
     
-    public static UINetworkPresenter Instance;
-
-    private void Awake()
+    private NetworkVariable<int> blueTeamCount = new NetworkVariable<int>();
+    private NetworkVariable<int> redTeamCount = new NetworkVariable<int>();
+    
+    public override void OnNetworkSpawn()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(this.gameObject);
-        }
-        Instance = this;
-
-        if (NetworkManager.Singleton.LocalClient.PlayerObject == null) return;
-        NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<PlayerNetworkData>().teamId.OnValueChanged += UpdateView;
-    }
-
-    private void OnDestroy()
-    {
-        if (Instance == this) Instance = null;
+        blueTeamCount.OnValueChanged += UpdateView;
+        redTeamCount.OnValueChanged += UpdateView;
         
-        if (NetworkManager.Singleton.LocalClient.PlayerObject == null) return;
-        NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<PlayerNetworkData>().teamId.OnValueChanged -= UpdateView;
+        UpdateView(0, 0);
+        
+        if (!IsServer) return;
+        
+        NetworkManager.Singleton.OnClientConnectedCallback += PlayerConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback += PlayerDisconnected;
+        
+        foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            PlayerConnected(clientId);
+        }
+    }
+    public override void OnNetworkDespawn()
+    {
+        blueTeamCount.OnValueChanged -= UpdateView;
+        redTeamCount.OnValueChanged -= UpdateView;
+        
+        if (!IsServer) return;
+        
+        NetworkManager.Singleton.OnClientConnectedCallback -= PlayerConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback -= PlayerDisconnected;
     }
     
-    public void OnPlayerSpawned(PlayerNetworkData playerData)
+    private void PlayerConnected(ulong clientId)
     {
-        playerData.teamId.OnValueChanged += UpdateView;
+        ChangeTeamText();
+
+        if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client)) return;
+        if (client.PlayerObject == null) return;
+
+        client.PlayerObject.GetComponent<PlayerNetworkData>().teamId.OnValueChanged += ChangeTeamCount;
     }
-    public void OnPlayerDespawned(PlayerNetworkData playerData)
+
+    private void PlayerDisconnected(ulong clientId)
     {
-        playerData.teamId.OnValueChanged -= UpdateView;
-        UpdateView(0,0);
+        ChangeTeamCount(0,0);
     }
     
+    private void ChangeTeamCount(int oldValue, int newValue)
+    {
+        Debug.Log("teamId is Changed" +  oldValue + " -> " + newValue);
+        
+        int blueTeamPlayers = 0;
+        int redTeamPlayers = 0;
+        
+        foreach(var client in NetworkManager.Singleton.ConnectedClientsList)
+        {
+            NetworkObject player = client.PlayerObject;
+            if (player == null) continue;
+            PlayerNetworkData playerData = player.GetComponent<PlayerNetworkData>();
+            if (playerData == null) continue;
+            
+            NetworkVariable<int> teamId = playerData.teamId;
+            switch (teamId.Value)
+            {
+                case 1: redTeamPlayers++; break;
+                case 2: blueTeamPlayers++; break;
+            }
+        }
+        
+        blueTeamCount.Value = blueTeamPlayers;
+        redTeamCount.Value = redTeamPlayers;
+    }
+
+    #region UpdateView
     private void UpdateView(int oldValue, int newValue)
     {
-        Debug.Log($"UpdateView {oldValue} -> {newValue}");
-        ChangeTeamText();
         ChangeTeamImage();
+        ChangeTeamText();
+    }
+
+    private void ChangeTeamText()
+    {
+        _blueTeamPlayers.text = blueTeamCount.Value.ToString();
+        _redTeamPlayers.text = redTeamCount.Value.ToString();
     }
 
     private void ChangeTeamImage()
     {
-        NetworkVariable<int> teamId = NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<PlayerNetworkData>().teamId;
+        NetworkObject player = NetworkManager.Singleton.LocalClient.PlayerObject;
+        if (player == null) return;
+        PlayerNetworkData playerData = player.GetComponent<PlayerNetworkData>();
+        if (playerData == null) return;
+
+        NetworkVariable<int> teamId = playerData.teamId;
 
         switch (teamId.Value)
         {
@@ -77,22 +129,6 @@ public class UINetworkPresenter : NetworkBehaviour
         }
     }
 
-    private void ChangeTeamText()
-    {
-        int blueTeamPlayers = 0;
-        int redTeamPlayers = 0;
-        
-        foreach(var client in NetworkManager.Singleton.ConnectedClientsList)
-        {
-            NetworkVariable<int> teamId = client.PlayerObject.GetComponent<PlayerNetworkData>().teamId;
-            switch (teamId.Value)
-            {
-                case 1: redTeamPlayers++; break;
-                case 2: blueTeamPlayers++; break;
-            }
-        }
-        
-        _blueTeamPlayers.text = blueTeamPlayers.ToString();
-        _redTeamPlayers.text = redTeamPlayers.ToString();
-    }
+
+    #endregion
 }

@@ -37,7 +37,6 @@ public class PlayerNetworkData : NetworkBehaviour
 
     private void OnTeamIdChanged(int oldValue, int newValue)
     {
-        Debug.Log($"OnTeamIdChanged {oldValue} -> {newValue}");
         UpdateSpriteColor(newValue);
     }
     private void UpdateSpriteColor(int team)
