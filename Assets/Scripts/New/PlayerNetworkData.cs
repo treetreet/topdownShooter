@@ -2,6 +2,8 @@ using Unity.Netcode;
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using Unity.Networking.Transport;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerNetworkData : NetworkBehaviour
@@ -18,20 +20,19 @@ public class PlayerNetworkData : NetworkBehaviour
     {
         _playerSpriteRenderer = gameObject.GetComponent<SpriteRenderer>();
 
+        NetworkManager.Singleton.OnClientConnectedCallback += OnPlayerConnected;
         teamId.OnValueChanged += OnTeamIdChanged;
-        if (UINetworkPresenter.Instance != null)
-        {
-            UINetworkPresenter.Instance.OnPlayerSpawned(this);
-        }
     }
 
     public override void OnNetworkDespawn()
     {
+        NetworkManager.Singleton.OnClientConnectedCallback -= OnPlayerConnected;
         teamId.OnValueChanged -= OnTeamIdChanged;
-        if (UINetworkPresenter.Instance != null)
-        {
-            UINetworkPresenter.Instance.OnPlayerDespawned(this);
-        }
+    }
+
+    private void OnPlayerConnected(ulong clientId)
+    {
+        UpdateSpriteColor(teamId.Value);
     }
 
     private void OnTeamIdChanged(int oldValue, int newValue)
