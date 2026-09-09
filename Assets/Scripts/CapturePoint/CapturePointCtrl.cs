@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UI;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -14,10 +15,14 @@ public class CapturePointCtrl : NetworkBehaviour
 
     [SerializeField] private int scorePerSecond = 10;
     private readonly Dictionary<Team, HashSet<NetworkObject>> _playersInZone = new();
-
+    [Space(10f)]
+    [SerializeField] private WinUI _winUI;
+    
+    [Space(10f)]
     [SerializeField] private NetworkVariable<Team> _inZoneTeam = new(Team.None);
     [SerializeField] private NetworkVariable<Team> _zoneOwnerTeam = new(Team.None);
-
+    
+    
     private NetworkVariable<float> _zoneGauge = new(0f);
     private NetworkVariable<float> _redScore = new(0f);
     private NetworkVariable<float> _blueScore = new(0f);
@@ -166,7 +171,7 @@ public class CapturePointCtrl : NetworkBehaviour
             if (_redScore.Value >= 100)
             {
                 _redScore.Value = 100;
-                Debug.Log("Red Win!");
+                _winUI.RedWin();
             }
         }
         else if (_inZoneTeam.Value == Team.Blue)
@@ -175,7 +180,7 @@ public class CapturePointCtrl : NetworkBehaviour
             if (_blueScore.Value >= 100)
             {
                 _blueScore.Value = 100;
-                Debug.Log("Blue Win!");
+                _winUI.BlueWin();
             }
         }
     }
