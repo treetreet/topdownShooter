@@ -12,39 +12,77 @@ public class CapturePointCtrl : NetworkBehaviour
         Contesting = 3
     }
 
-    public int scorePerSecond = 10;
+    [SerializeField] private int scorePerSecond = 10;
     private readonly Dictionary<Team, HashSet<NetworkObject>> _playersInZone = new();
 
-    private Team _inZoneTeam = Team.None;
-    private Team _zoneOwnerTeam = Team.None;
+    [SerializeField] private NetworkVariable<Team> _inZoneTeam = new(Team.None);
+    [SerializeField] private NetworkVariable<Team> _zoneOwnerTeam = new(Team.None);
+
+    private NetworkVariable<float> _zoneGauge = new(0f);
+    private NetworkVariable<float> _redScore = new(0f);
+    private NetworkVariable<float> _blueScore = new(0f);
     
-    [SerializeField] private float _zoneGauge = 0f;
-    
-    [SerializeField] private float _redScore = 0f;
-    [SerializeField] private float _blueScore = 0f;
-    
-    
-    private void Awake()
+    public override void OnNetworkSpawn()
     {
-        _playersInZone.Add(Team.Red, new HashSet<NetworkObject>());
-        _playersInZone.Add(Team.Blue, new HashSet<NetworkObject>());
+        _zoneGauge.OnValueChanged += OnZoneGaugeChanged;
+        _redScore.OnValueChanged += OnRedScoreChanged;
+        _blueScore.OnValueChanged += OnBlueScoreChanged;
+        
+        if (!IsServer)
+            return;
+
+        _playersInZone[Team.Red] = new HashSet<NetworkObject>();
+        _playersInZone[Team.Blue] = new HashSet<NetworkObject>();
+    }
+
+    private void OnZoneGaugeChanged(float previous, float current)
+    {
+        UIManager.Instance.OccGauge = current;
+    }
+
+    private void OnRedScoreChanged(float previous, float current)
+    {
+        Debug.Log($"Red Score changed for {previous} to {current}");
+        
+        UIManager.Instance.RedScore = (int)current;
+    }
+
+    private void OnBlueScoreChanged(float previous, float current)
+    {
+        Debug.Log($"Blue Score changed for {previous} to {current}");
+        
+        UIManager.Instance.BlueScore = (int)current;
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        //if (!IsServer || !other.CompareTag("Player")) return;
+        if (!other.CompareTag("Player")) return;
 
-        Debug.Log(other.gameObject.tag + " - " + other.gameObject.layer);
-        if (other.gameObject.layer == LayerMask.NameToLayer("Red"))
+        NetworkObject player = other.GetComponent<NetworkObject>();
+        if (player == null) return;
+        
+        if (IsClient)
         {
-            Debug.Log("Red 입장");
-            _playersInZone[Team.Red].Add(other.gameObject.GetComponent<NetworkObject>());
+            CapturePointEnterServerRpc(player.OwnerClientId);
         }
+    }
 
-        else if (other.gameObject.layer == LayerMask.NameToLayer("Blue"))
+    [ServerRpc(RequireOwnership = false)]
+    private void CapturePointEnterServerRpc(ulong clientId)
+    {
+        NetworkObject player =
+            NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
+
+        if (player == null)
+            return;
+
+        if (player.gameObject.layer == LayerMask.NameToLayer("Red"))
         {
-            Debug.Log("Blue 입장");
-            _playersInZone[Team.Blue].Add(other.gameObject.GetComponent<NetworkObject>());
+            _playersInZone[Team.Red].Add(player);
+        }
+        else if (player.gameObject.layer == LayerMask.NameToLayer("Blue"))
+        {
+            _playersInZone[Team.Blue].Add(player);
         }
 
         CheckInZoneTeam();
@@ -52,18 +90,36 @@ public class CapturePointCtrl : NetworkBehaviour
 
     private void OnTriggerExit2D(Collider2D other)
     {
-        //if (!IsServer || !other.CompareTag("Player")) return;
+        if (!other.CompareTag("Player"))
+            return;
 
-        if (other.gameObject.layer == LayerMask.NameToLayer("Red"))
+        NetworkObject player = other.GetComponent<NetworkObject>();
+
+        if (player == null)
+            return;
+
+        if (IsClient)
         {
-            Debug.Log("Red 퇴장");
-            _playersInZone[Team.Red].Remove(other.gameObject.GetComponent<NetworkObject>());
+            CapturePointExitServerRpc(player.OwnerClientId);
         }
+    }
+    
+    [ServerRpc(RequireOwnership = false)]
+    private void CapturePointExitServerRpc(ulong clientId)
+    {
+        NetworkObject player =
+            NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
 
-        if (other.gameObject.layer == LayerMask.NameToLayer("Blue"))
+        if (player == null)
+            return;
+
+        if (player.gameObject.layer == LayerMask.NameToLayer("Red"))
         {
-            Debug.Log("Blue 퇴장");
-            _playersInZone[Team.Blue].Remove(other.gameObject.GetComponent<NetworkObject>());
+            _playersInZone[Team.Red].Remove(player);
+        }
+        else if (player.gameObject.layer == LayerMask.NameToLayer("Blue"))
+        {
+            _playersInZone[Team.Blue].Remove(player);
         }
 
         CheckInZoneTeam();
@@ -76,60 +132,51 @@ public class CapturePointCtrl : NetworkBehaviour
         
         if (inRed)
         {
-            _inZoneTeam = inBlue ? Team.Contesting : Team.Red;
+            _inZoneTeam.Value = inBlue ? Team.Contesting : Team.Red;
         }
         else
         {
-            _inZoneTeam = inBlue ? Team.Blue : Team.None;
+            _inZoneTeam.Value = inBlue ? Team.Blue : Team.None;
         }
     }
 
     void Update()
     {
-        //if (!IsServer) return;
+        if (!IsServer) return;
         
-        if (_inZoneTeam == Team.None)
+        if (_inZoneTeam.Value == Team.Red || _inZoneTeam.Value == Team.Blue)
         {
-            ScoreUp(_inZoneTeam);
-        }
-        else if (_inZoneTeam == Team.Red || _inZoneTeam == Team.Blue)
-        {
-            if (_inZoneTeam == _zoneOwnerTeam)
+            if (_inZoneTeam.Value == _zoneOwnerTeam.Value)
             {
-                ScoreUp(_inZoneTeam);
+                ScoreUp();
             }
             else
             {
-                ZoneGaugeUp(_inZoneTeam);
+                ZoneGaugeUp(_inZoneTeam.Value);
             }
         }
     }
 
-    void ScoreUp(Team team)
+    void ScoreUp()
     {
-        if (team == Team.Red)
+        Debug.Log(_inZoneTeam.Value + "Score Up");
+        if (_inZoneTeam.Value == Team.Red)
         {
-            _redScore += scorePerSecond * Time.deltaTime;
-            if (_redScore >= 100)
+            _redScore.Value += scorePerSecond * Time.deltaTime;
+            if (_redScore.Value >= 100)
             {
-                _redScore = 100;
+                _redScore.Value = 100;
                 Debug.Log("Red Win!");
             }
-
-            // UI
-            UIManager.Instance.RedScore = (int)_redScore;
         }
-        else if (team == Team.Blue)
+        else if (_inZoneTeam.Value == Team.Blue)
         {
-            _blueScore += scorePerSecond * Time.deltaTime;
-            if (_blueScore >= 100)
+            _blueScore.Value += scorePerSecond * Time.deltaTime;
+            if (_blueScore.Value >= 100)
             {
-                _blueScore = 100;
+                _blueScore.Value = 100;
                 Debug.Log("Blue Win!");
             }
-
-            // UI
-            UIManager.Instance.BlueScore = (int)_blueScore;
         }
     }
 
@@ -137,33 +184,29 @@ public class CapturePointCtrl : NetworkBehaviour
     {
         if (team == Team.Red)
         {
-            _zoneGauge += scorePerSecond * Time.deltaTime;
-            if (_zoneGauge >= 100)
+            _zoneGauge.Value += scorePerSecond * Time.deltaTime;
+            if (_zoneGauge.Value >= 100)
             {
-                _zoneGauge = 100;
-                _zoneOwnerTeam = team;
+                _zoneGauge.Value = 100;
+                _zoneOwnerTeam.Value = team;
             }
-            else if (_zoneOwnerTeam == Team.Blue && _zoneGauge >= 0)
+            else if (_zoneOwnerTeam.Value == Team.Blue && _zoneGauge.Value >= 0)
             {
-                _zoneOwnerTeam = Team.None;
+                _zoneOwnerTeam.Value = Team.None;
             }
         }
         else if (team == Team.Blue)
         {
-            _zoneGauge -= scorePerSecond * Time.deltaTime;
-            if (_zoneGauge <= -100)
+            _zoneGauge.Value -= scorePerSecond * Time.deltaTime;
+            if (_zoneGauge.Value <= -100)
             {
-                _zoneGauge = -100;
-                _zoneOwnerTeam = team;
+                _zoneGauge.Value = -100;
+                _zoneOwnerTeam.Value = team;
             }
-            else if (_zoneOwnerTeam == Team.Red && _zoneGauge <= 0)
+            else if (_zoneOwnerTeam.Value == Team.Red && _zoneGauge.Value <= 0)
             {
-                _zoneOwnerTeam = Team.None;
+                _zoneOwnerTeam.Value = Team.None;
             }
         }
-
-
-        // UI
-        UIManager.Instance.OccGauge = _zoneGauge;
     }
 }
