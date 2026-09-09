@@ -3025,7 +3025,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60735e08043a65e48894702687647fc8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerDataList: []
 --- !u!4 &676732574
 Transform:
   m_ObjectHideFlags: 0
@@ -3053,8 +3052,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b4ab0a26f8a45269526f5b17311cbff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerEntryPrefab: {fileID: 7200294635291077197, guid: 14727f29ee38fc843b0b9c310175f351, type: 3}
-  contentParent: {fileID: 169400074}
   startGameButton: {fileID: 0}
 --- !u!114 &676732576
 MonoBehaviour:
@@ -5415,7 +5412,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1555242018
 Transform:
   m_ObjectHideFlags: 0

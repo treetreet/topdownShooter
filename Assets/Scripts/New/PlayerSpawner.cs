@@ -22,6 +22,7 @@ namespace New
 
                 playerMovement.RespawnPoint = GetRandomSpawnPoint(team.teamId.Value).position;
                 playerMovement.transform.position = playerMovement.RespawnPoint;
+                playerMovement.isStarted = true;
             }
         }
         

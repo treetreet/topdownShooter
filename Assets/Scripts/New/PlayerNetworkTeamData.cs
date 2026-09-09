@@ -18,6 +18,7 @@ public class PlayerNetworkTeamData : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        Debug.Log("OnNetworkSpawn Player: " + NetworkManager.Singleton.LocalClientId);
         _playerSpriteRenderer = gameObject.GetComponent<SpriteRenderer>();
 
         NetworkManager.Singleton.OnClientConnectedCallback += OnPlayerConnected;

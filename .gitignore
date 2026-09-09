@@ -70,3 +70,48 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+connectwebgl.zip
+WebGL Builds.zip
+webgl_sharing
+WebGL Builds/dependencies.txt
+WebGL Builds/GUID.txt
+WebGL Builds/index.html
+WebGL Builds/ProjectVersion.txt
+WebGL Builds/Build/WebGL Builds.data.br
+WebGL Builds/Build/WebGL Builds.framework.js.br
+WebGL Builds/Build/WebGL Builds.loader.js
+WebGL Builds/Build/WebGL Builds.wasm.br
+WebGL Builds/StreamingAssets/UnityServicesProjectConfiguration.json
+WebGL Builds/TemplateData/dependencies.txt
+WebGL Builds/TemplateData/favicon.ico
+WebGL Builds/TemplateData/fullscreen-button.png
+WebGL Builds/TemplateData/GUID.txt
+WebGL Builds/TemplateData/index.html
+WebGL Builds/TemplateData/MemoryProfiler.png
+WebGL Builds/TemplateData/progress-bar-empty-dark.png
+WebGL Builds/TemplateData/progress-bar-empty-light.png
+WebGL Builds/TemplateData/progress-bar-full-dark.png
+WebGL Builds/TemplateData/progress-bar-full-light.png
+WebGL Builds/TemplateData/ProjectVersion.txt
+WebGL Builds/TemplateData/style.css
+WebGL Builds/TemplateData/unity-logo-dark.png
+WebGL Builds/TemplateData/unity-logo-light.png
+WebGL Builds/TemplateData/unity-logo-title-footer.png
+WebGL Builds/TemplateData/webmemd-icon.png
+WebGL Builds/TemplateData/Build/TemplateData.data.br
+WebGL Builds/TemplateData/Build/TemplateData.framework.js.br
+WebGL Builds/TemplateData/Build/TemplateData.loader.js
+WebGL Builds/TemplateData/Build/TemplateData.wasm.br
+WebGL Builds/TemplateData/StreamingAssets/UnityServicesProjectConfiguration.json
+WebGL Builds/TemplateData/TemplateData/favicon.ico
+WebGL Builds/TemplateData/TemplateData/fullscreen-button.png
+WebGL Builds/TemplateData/TemplateData/MemoryProfiler.png
+WebGL Builds/TemplateData/TemplateData/progress-bar-empty-dark.png
+WebGL Builds/TemplateData/TemplateData/progress-bar-empty-light.png
+WebGL Builds/TemplateData/TemplateData/progress-bar-full-dark.png
+WebGL Builds/TemplateData/TemplateData/progress-bar-full-light.png
+WebGL Builds/TemplateData/TemplateData/style.css
+WebGL Builds/TemplateData/TemplateData/unity-logo-dark.png
+WebGL Builds/TemplateData/TemplateData/unity-logo-light.png
+WebGL Builds/TemplateData/TemplateData/unity-logo-title-footer.png
+WebGL Builds/TemplateData/TemplateData/webmemd-icon.png
