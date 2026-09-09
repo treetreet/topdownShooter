@@ -1,3 +1,4 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
 using System.Collections;
@@ -16,10 +17,10 @@ public class PlayerMovement : NetworkBehaviour
     private float _fireTimer = 0f;
     private float _reloadTime = 2f;
 
-    private NetworkVariable<float> _hp = new(100f);
+    public NetworkVariable<float> _hp = new(100f);
     private float _maxHp = 100f;
 
-    private NetworkVariable<int> _currentAmmo = new(30);
+    public NetworkVariable<int> _currentAmmo = new(30);
     private int _maxAmmo = 30;
 
     private NetworkVariable<bool> _netIsDead = new(false); // ✅ 사망 상태 공유
@@ -27,7 +28,7 @@ public class PlayerMovement : NetworkBehaviour
     private bool _isReloading = false;
 
     public bool isStarted = false;
-
+    
     public override void OnNetworkSpawn()
     {
         _tr = transform;
@@ -39,7 +40,6 @@ public class PlayerMovement : NetworkBehaviour
 
         Fire();
 
-        // 🔁 클라이언트에서 재장전 키 입력 → 서버에게 요청
         if (Input.GetKeyDown(KeyCode.R) && !_isReloading && _currentAmmo.Value < _maxAmmo)
         {
             ReloadRequestServerRpc();
