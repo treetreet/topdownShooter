@@ -171,7 +171,7 @@ public class CapturePointCtrl : NetworkBehaviour
             if (_redScore.Value >= 100)
             {
                 _redScore.Value = 100;
-                _winUI.RedWin();
+                WinClientRpc(Team.Red);
             }
         }
         else if (_inZoneTeam.Value == Team.Blue)
@@ -180,7 +180,7 @@ public class CapturePointCtrl : NetworkBehaviour
             if (_blueScore.Value >= 100)
             {
                 _blueScore.Value = 100;
-                _winUI.BlueWin();
+                WinClientRpc(Team.Blue);
             }
         }
     }
@@ -212,6 +212,21 @@ public class CapturePointCtrl : NetworkBehaviour
             {
                 _zoneOwnerTeam.Value = Team.None;
             }
+        }
+    }
+
+    [ClientRpc]
+    private void WinClientRpc(Team team)
+    {
+        Debug.Log($"[Client {NetworkManager.Singleton.LocalClientId}] WinClientRpc received, team={team}, winUI null? {_winUI == null}");
+        
+        if (team == Team.Blue)
+        {
+            _winUI.BlueWin();
+        }
+        else
+        {
+            _winUI.RedWin();
         }
     }
 }
