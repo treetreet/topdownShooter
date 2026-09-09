@@ -36,4 +36,4 @@ WASD로 이동, 마우스 좌클릭으로 총알을 발사하고 R을 눌러 재
 한 팀의 점수가 100에 도달하면 승리합니다.
 
 ## 플레이 링크
-https://yangsonguk11.itch.io/opensourcetopdownshooter
+https://treetreet44.itch.io/topdown-shooter-v1-1-2
